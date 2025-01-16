@@ -55,6 +55,6 @@ jobs:
             sudo docker system prune -f
 
             sudo docker run -d --name ${{ vars.SERVICE_NAME }} \
-              --env-file ~/cookwithme/.env \
+              --env-file ~/quickcap/.env \
               -p ${{ vars.SERVICE_PORT }}:${{ vars.SERVICE_PORT }} ${{ secrets.DOCKER_USERNAME }}/${{ vars.SERVICE_NAME }}:latest
           EOF
