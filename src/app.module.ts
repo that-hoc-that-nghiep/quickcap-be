@@ -10,7 +10,6 @@ import { TaskModule } from './task/task.module';
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(process.env.DATABASE_URL),
     TaskModule,
-
   ],
   controllers: [AppController],
   providers: [AppService],

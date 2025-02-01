@@ -5,10 +5,10 @@ export type TaskDocument = HydratedDocument<Task>;
 
 @Schema()
 export class Task {
-  @Prop()
-  name: string;
+  @Prop({ required: true, unique: true })
+  title: string;
 
-  @Prop()
+  @Prop({ required: true })
   description: string;
 }
 export const TaskSchema = SchemaFactory.createForClass(Task);
