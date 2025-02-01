@@ -1,16 +1,26 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Task } from './task.schema';
 import { Model } from 'mongoose';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class TaskService {
-  constructor(@InjectModel(Task.name) private taskModel: Model<Task>) {}
+  constructor(
+    @InjectModel(Task.name) private taskModel: Model<Task>,
+    @Inject('TEST_SERVICE') private rabbitClient: ClientProxy,
+  ) {}
+
+  async testRabbitmq() {
+    this.rabbitClient.emit('hehe', { mess: 'ping' });
+    console.log('send rabbitmq');
+    return { data: '', message: 'test rabbitmq' };
+  }
   async createTask(createTaskDto: CreateTaskDto) {
     const { title, description } = createTaskDto;
-    const task = await new this.taskModel({ title, description });
+    const task = await new this.taskModel({ title, description }).save();
     return { data: task, message: 'Create new Task successfull' };
   }
   async getTaskById(id: string) {

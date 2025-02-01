@@ -18,6 +18,12 @@ import { isArray } from 'class-validator';
 @Controller('task')
 export class TaskController {
   constructor(private taskService: TaskService) {}
+
+  @Get('test')
+  async testRabbitmq() {
+    return this.taskService.testRabbitmq();
+  }
+
   @Post()
   @ApiOkResponse({ type: Task })
   @ApiBody({
