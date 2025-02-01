@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, UseInterceptors } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -12,10 +12,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Task } from './task.schema';
-import { isArray } from 'class-validator';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 
 @ApiTags('Task')
 @Controller('task')
+@UseInterceptors(CacheInterceptor)
 export class TaskController {
   constructor(private taskService: TaskService) {}
 
@@ -54,17 +55,8 @@ export class TaskController {
   updateTask(@Body() updateTaskDto: UpdateTaskDto, @Param('id') id: string) {
     return this.taskService.updateTaskById(updateTaskDto, id);
   }
+
   @Get(':id')
-  @ApiParam({
-    name: 'id',
-    type: 'string',
-    examples: {
-      id_1: {
-        value: '679e2657f758ba9e3ba73bdc',
-        description: `id for task 1`,
-      },
-    },
-  })
   @ApiOkResponse({ type: Task })
   async getTaskById(@Param('id') id: string) {
     return await this.taskService.getTaskById(id);

@@ -5,6 +5,8 @@ import { Task } from './task.schema';
 import { Model } from 'mongoose';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { ClientProxy } from '@nestjs/microservices';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class TaskService {
