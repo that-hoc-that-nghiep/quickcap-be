@@ -10,15 +10,15 @@ export class TaskService {
   constructor(@InjectModel(Task.name) private taskModel: Model<Task>) {}
   async createTask(createTaskDto: CreateTaskDto) {
     const { title, description } = createTaskDto;
-    const task = new this.taskModel({ title, description });
-    return task.save();
+    const task = await new this.taskModel({ title, description });
+    return { data: task, message: 'Create new Task successfull' };
   }
   async getTaskById(id: string) {
     const task = await this.taskModel.findById(id);
     if (!task) {
       throw new NotFoundException(`Id ${id} not found in database`);
     }
-    return task;
+    return { data: task, message: 'Get task by id successfull' };
   }
 
   async updateTaskById(updateTaskDto: UpdateTaskDto, id: string) {
@@ -36,15 +36,16 @@ export class TaskService {
     if (!updateTask) {
       throw new NotFoundException(`Task ${id} not found in database.`);
     }
-    return updateTask;
+    return { data: updateTask, message: 'Update task successfull' };
   }
 
   async getTasks() {
     const tasks = await this.taskModel.find();
-    return tasks;
+    return { data: tasks, message: 'Get Task success' };
   }
 
   async deleteTask(id: string) {
-    return await this.taskModel.findByIdAndDelete(id);
+    const task = await this.taskModel.findByIdAndDelete(id);
+    return { data: task, message: 'Delete succesfull' };
   }
 }

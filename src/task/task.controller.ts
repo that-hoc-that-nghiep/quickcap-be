@@ -39,7 +39,6 @@ export class TaskController {
     *Any where
     `,
   })
-  @ApiBearerAuth('token')
   createTask(@Body() createTaskDto: CreateTaskDto) {
     return this.taskService.createTask(createTaskDto);
   }
