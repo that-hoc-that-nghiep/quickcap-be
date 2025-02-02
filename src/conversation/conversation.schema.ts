@@ -20,7 +20,7 @@ export class Conversation {
   createdAt: Date;
 
   @ApiProperty()
-  @Prop({ required: true })
+  @Prop({ required: true }) 
   videoId: string;
 
   @ApiProperty()
