@@ -5,13 +5,15 @@ import { MongoExceptionFilter } from './exception-filters/mongo-exception.filter
 import { configSwagger } from './configs/api-docs.config';
 import { TransformInterceptor } from './interceptors/transform.interceptor';
 import { MicroserviceOptions } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
   app.connectMicroservice<MicroserviceOptions>({
     options: {
-      urls: [`${process.env.RABBITMQ_URL}`],
-      queue: 'test_quickcap_queue',
+      urls: [configService.get<string>('RABBITMQ_URL')],
+      queue: 'auth_queue',
     },
   });
   app.setGlobalPrefix('api/v1');
@@ -20,6 +22,6 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
   configSwagger(app);
   await app.startAllMicroservices();
-  await app.listen(process.env.PORT ?? 8080);
+  await app.listen(configService.get<number>('PORT') ?? 8080);
 }
 bootstrap();

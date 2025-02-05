@@ -43,7 +43,7 @@ export class Video {
     enum: VideoType,
     default: VideoType.PRIVATE,
   })
-  type: VideoType;
+  type: VideoType
 
   @ApiProperty()
   @Prop({ default: 'No summary' })
