@@ -2,7 +2,8 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { Category } from 'src/category/category.schema';
-import { VideoType } from 'src/constants';
+import { VideoType } from 'src/constants/video';
+
 
 export type TaskDocument = HydratedDocument<Video>;
 

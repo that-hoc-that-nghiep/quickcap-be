@@ -9,6 +9,7 @@ import { ReportModule } from './report/report.module';
 import { InviteModule } from './invite/invite.module';
 import { MediaModule } from './media/media.module';
 import { ConversationModule } from './conversation/conversation.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ConversationModule } from './conversation/conversation.module';
     InviteModule,
     MediaModule,
     ConversationModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],
