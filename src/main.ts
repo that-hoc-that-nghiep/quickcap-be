@@ -6,6 +6,7 @@ import { configSwagger } from './configs/api-docs.config';
 import { TransformInterceptor } from './interceptors/transform.interceptor';
 import { MicroserviceOptions } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from './auth/auth.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,6 +18,7 @@ async function bootstrap() {
     },
   });
   app.setGlobalPrefix('api/v1');
+  app.useGlobalGuards(app.get(AuthGuard));
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new MongoExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());

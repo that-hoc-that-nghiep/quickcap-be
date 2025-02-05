@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { HydratedDocument } from 'mongoose';
-import { ReportType } from 'src/constants';
+import { ReportType } from 'src/constants/report';
 
 export type ReportDocument = HydratedDocument<Report>;
 
