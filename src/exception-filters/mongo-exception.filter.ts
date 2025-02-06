@@ -4,7 +4,6 @@ import {
   ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import { error } from 'console';
 import { Response } from 'express';
 import { MongoServerError } from 'mongodb';
 import * as mongoose from 'mongoose';

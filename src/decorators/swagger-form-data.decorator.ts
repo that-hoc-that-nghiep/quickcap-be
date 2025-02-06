@@ -6,6 +6,7 @@ import {
   ReferenceObject,
   SchemaObject,
 } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
+import { SwaggerArrayConversion } from 'src/interceptors/swagger-array.interceptor';
 
 export function ApiBodyWithSingleFile(
   name = 'file',
@@ -53,16 +54,28 @@ export function ApiBodyWithSingleFile(
 export function ApiDocsPagination(entity: string) {
   return applyDecorators(
     ApiQuery({
-      name: 'offset',
+      name: 'page',
       type: Number,
       examples: {
-        '0': {
-          value: 0,
-          description: 'Start from 0',
+        '1': {
+          value: 1,
+          description: 'page 1',
         },
-        '10': {
-          value: 10,
-          description: `Skip 10 ${entity}s`,
+        '2': {
+          value: 2,
+          description: `page 2`,
+        },
+        '3': {
+          value: 3,
+          description: `page 3`,
+        },
+        '4': {
+          value: 4,
+          description: `page 4`,
+        },
+        '5': {
+          value: 5,
+          description: `page 5`,
         },
       },
     }),
@@ -70,15 +83,25 @@ export function ApiDocsPagination(entity: string) {
       name: 'limit',
       type: Number,
       examples: {
+        '5': {
+          value: 5,
+          description: `Get 5 ${entity}s`,
+        },
         '10': {
           value: 10,
           description: `Get 10 ${entity}s`,
         },
-        '50': {
-          value: 50,
-          description: `Get 50 ${entity}s`,
+        '15': {
+          value: 15,
+          description: `Get 15 ${entity}s`,
         },
       },
+    }),
+    ApiQuery({
+      name: 'keyword',
+      type: String,
+      required: false,
+      description: 'Search by title video',
     }),
   );
 }
