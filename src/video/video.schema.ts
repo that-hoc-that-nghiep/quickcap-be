@@ -4,10 +4,9 @@ import mongoose, { HydratedDocument } from 'mongoose';
 import { Category } from 'src/category/category.schema';
 import { VideoType } from 'src/constants/video';
 
-
 export type TaskDocument = HydratedDocument<Video>;
 
-@Schema({ versionKey: false, timestamps: true })
+@Schema({ versionKey: false })
 export class Video {
   @ApiProperty()
   @Prop({ default: 'Untilted Video' })
@@ -44,7 +43,7 @@ export class Video {
     enum: VideoType,
     default: VideoType.PRIVATE,
   })
-  type: VideoType
+  type: VideoType;
 
   @ApiProperty()
   @Prop({ default: 'No summary' })
@@ -53,5 +52,9 @@ export class Video {
   @ApiProperty()
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }])
   categoryId: Category[];
+
+  @ApiProperty()
+  @Prop({ default: Date.now() })
+  createdAt: Date;
 }
 export const VideoSchema = SchemaFactory.createForClass(Video);
