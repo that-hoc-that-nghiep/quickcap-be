@@ -13,8 +13,4 @@ export class UpdateMediaDto {
   @ApiProperty({ required: true })
   @IsString()
   camera: string;
-
-  @ApiProperty({ required: true })
-  @IsString()
-  userId: string;
 }

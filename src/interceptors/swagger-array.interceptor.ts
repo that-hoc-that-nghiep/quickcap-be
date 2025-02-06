@@ -18,8 +18,7 @@ export class SwaggerArrayConversion implements NestInterceptor {
   ): Observable<any> | Promise<Observable<any>> {
     const configService: ConfigService = new ConfigService();
     const request: Request = context.switchToHttp().getRequest();
-    // const API_DOCS_URL = configService.get<string>('API_DOC_URL');
-    const API_DOCS_URL = 'http://localhost:9999/api';
+    const API_DOCS_URL = configService.get<string>('API_DOC_URL');
     if (
       request.headers.referer === API_DOCS_URL &&
       request.body[this.property_name]

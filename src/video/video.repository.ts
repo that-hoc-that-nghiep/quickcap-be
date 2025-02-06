@@ -25,7 +25,6 @@ export class VideoRepository {
       summary,
       categoryId,
     });
-    console.log('video from createVideo', video);
     return video.populate('categoryId');
   }
 
