@@ -8,29 +8,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { UserPermission, UserSubscription } from 'src/constants/user';
-export interface Organization {
-  id: string;
-  name: string;
-  image: string | null;
-  metadata: string | null;
-  created_at: string;
-  is_owner: boolean;
-  is_permission: UserPermission;
-}
-
-interface User {
-  id: string;
-  created_at: string;
-  email: string;
-  name: string;
-  given_name: string;
-  family_name: string;
-  picture: string | null;
-  locale: string | null;
-  metadata: string | null;
-  subscription: UserSubscription;
-  organizations: Organization[];
-}
+import { User } from './auth.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

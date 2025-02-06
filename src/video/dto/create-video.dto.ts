@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayNotEmpty, IsNotEmpty, IsString } from 'class-validator';
+import {
+  ArrayMinSize,
+  ArrayNotEmpty,
+  IsArray,
+  IsMongoId,
+  IsString,
+} from 'class-validator';
 
 export class CreateVideoDto {
   @ApiProperty()
@@ -14,8 +20,7 @@ export class CreateVideoDto {
   @IsString()
   summary: string;
 
-  @ApiProperty()
-  @ArrayNotEmpty() 
-  @IsString({ each: true }) 
+  @IsArray()
+  @ArrayMinSize(1)
   categoryId: string[];
 }

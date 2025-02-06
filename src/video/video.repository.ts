@@ -25,16 +25,40 @@ export class VideoRepository {
       summary,
       categoryId,
     });
+    console.log('video from createVideo', video);
     return video.populate('categoryId');
   }
 
-  async getAllVideos(): Promise<Video[]> {
-    const videos = await this.videoModel.find().exec();
-    return videos;
+  async getAllVideos(
+    orgId: string,
+    limit: number,
+    page: number,
+    keyword?: string,
+  ): Promise<{
+    videos: Video[];
+    total: number;
+  }> {
+    const filter: Record<string, any> = {
+      orgId: { $in: [orgId] },
+    };
+    if (keyword) {
+      filter.title = { $regex: keyword, $options: 'i' };
+    }
+    const skip = (page - 1) * limit;
+    const videos = await this.videoModel
+      .find(filter)
+      .skip(skip)
+      .limit(limit)
+      .exec();
+    const total = await this.videoModel.countDocuments(filter).exec();
+    return { videos, total };
   }
 
   async getVideoById(id: string): Promise<Video> {
-    const video = await this.videoModel.findById(id).exec();
+    const video = await this.videoModel
+      .findById(id)
+      .populate('categoryId')
+      .exec();
     if (!video) throw new NotFoundException(`Video id ${id} not found`);
     return video;
   }
@@ -48,7 +72,7 @@ export class VideoRepository {
         runValidators: true,
       },
     );
-    return updatedVideo.populate('categoryId');
+    return await updatedVideo.populate('categoryId');
   }
 
   async deleteVideo(id: string) {

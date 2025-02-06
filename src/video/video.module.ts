@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Video, VideoSchema } from './video.schema';
 import { VideoRepository } from './video.repository';
 import { CategoryModule } from 'src/category/category.module';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CategoryModule } from 'src/category/category.module';
       },
     ]),
     CategoryModule,
+    AuthModule,
   ],
   controllers: [VideoController],
   providers: [VideoService, VideoRepository],
