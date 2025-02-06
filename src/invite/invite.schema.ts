@@ -16,6 +16,10 @@ export class Invite {
 
   @ApiProperty()
   @Prop({ required: true })
+  content: string;
+
+  @ApiProperty()
+  @Prop({ required: true })
   orgId: string;
 
   @ApiProperty()
