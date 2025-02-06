@@ -1,10 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
-import { create } from 'domain';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CategoryService } from './category.service';
-import { GetUser } from 'src/decorators/get-user.decorator';
-import { userInfo } from 'os';
 
 @ApiTags('Category')
 @ApiSecurity('token')

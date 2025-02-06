@@ -34,4 +34,9 @@ export class CategoryRepository {
     if (!category) throw new NotFoundException(`Category id ${id} not found`);
     return category;
   }
+
+  async getCategoryByArrayId(ids: string[]): Promise<Category[]> {
+    const categories = this.categoryModel.find({ _id: { $in: ids } });
+    return categories;
+  }
 }
