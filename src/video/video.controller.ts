@@ -21,9 +21,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { VideoService } from './video.service';
-import {
-  ApiDocsPagination,
-} from 'src/decorators/swagger-form-data.decorator';
+import { ApiDocsPagination } from 'src/decorators/swagger-form-data.decorator';
 
 import { GetUser } from 'src/decorators/get-user.decorator';
 import { CreateVideoDto } from './dto/create-video.dto';
@@ -32,7 +30,6 @@ import { SwaggerArrayConversion } from 'src/interceptors/swagger-array.intercept
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { VideoType } from 'src/constants/video';
 import { User } from 'src/auth/auth.service';
-
 
 @ApiTags('Video')
 @ApiSecurity('token')
@@ -99,7 +96,16 @@ export class VideoController {
     @Body() createVideoDto: CreateVideoDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.videoService.uploadVideo(userId, orgId, createVideoDto, file);
+    const remakeCreateVideoDto = {
+      ...createVideoDto,
+      categoryId: createVideoDto.categoryId[0].split(','),
+    };
+    return this.videoService.uploadVideo(
+      userId,
+      orgId,
+      remakeCreateVideoDto,
+      file,
+    );
   }
 
   @Get('all/:orgId')
