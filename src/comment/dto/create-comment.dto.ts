@@ -6,8 +6,4 @@ export class CreateCommentDto {
   @IsString()
   @IsNotEmpty()
   content: string;
-
-  @ApiProperty()
-  @IsOptional()
-  parent_id?: string;
 }
