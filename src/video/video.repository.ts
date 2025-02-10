@@ -16,6 +16,7 @@ export class VideoRepository {
     createVideoDto: CreateVideoDto,
   ): Promise<Video> {
     const { title, description, summary, categoryId } = createVideoDto;
+    console.log('data from create video dto', createVideoDto);
     const video = await this.videoModel.create({
       title,
       description,
