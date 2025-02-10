@@ -11,14 +11,6 @@ export class Comment {
   content: string;
 
   @ApiProperty()
-  @Prop({ default: null })
-  parent_id: string;
-
-  @ApiProperty()
-  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }])
-  child_id: Comment[];
-
-  @ApiProperty()
   @Prop({ required: true })
   videoId: string;
 
