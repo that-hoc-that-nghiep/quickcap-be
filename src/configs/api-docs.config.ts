@@ -2,10 +2,11 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NextFunction, Request, Response } from 'express';
+import { EnvVariables } from 'src/constants';
 const configService = new ConfigService();
 const api_documentation_credentials = {
-  name: configService.get<string>('API_DOC_USERNAME'),
-  pass: configService.get<string>('API_DOC_PASSWORD'),
+  name: configService.get<string>(EnvVariables.API_DOC_USERNAME),
+  pass: configService.get<string>(EnvVariables.API_DOC_PASSWORD),
 };
 
 export function configSwagger(app: INestApplication) {

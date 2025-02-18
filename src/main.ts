@@ -7,6 +7,7 @@ import { MicroserviceOptions } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from './auth/auth.guard';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { EnvVariables } from './constants';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,7 +15,7 @@ async function bootstrap() {
 
   app.connectMicroservice<MicroserviceOptions>({
     options: {
-      urls: [configService.get<string>('RABBITMQ_URL')],
+      urls: [configService.get<string>(EnvVariables.RABBITMQ_URL)],
       queue: 'auth_queue',
     },
   });
@@ -36,6 +37,6 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
 
   await app.startAllMicroservices();
-  await app.listen(configService.get<number>('PORT') ?? 8080);
+  await app.listen(configService.get<number>(EnvVariables.PORT) ?? 8080);
 }
 bootstrap();

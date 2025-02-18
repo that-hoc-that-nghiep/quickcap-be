@@ -11,6 +11,7 @@ import { MediaModule } from './media/media.module';
 import { ConversationModule } from './conversation/conversation.module';
 import { AuthModule } from './auth/auth.module';
 import * as Joi from 'joi';
+import { EnvVariables } from './constants';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -40,7 +41,7 @@ import * as Joi from 'joi';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('DATABASE_LOCAL_URL'),
+        uri: configService.get<string>(EnvVariables.DATABASE_LOCAL_URL),
       }),
       inject: [ConfigService],
     }),

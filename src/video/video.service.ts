@@ -14,6 +14,7 @@ import { UpdateVideoDto } from './dto/update-video.dto';
 
 import { VideoType } from 'src/constants/video';
 import { AuthService, User } from 'src/auth/auth.service';
+import { EnvVariables } from 'src/constants';
 @Injectable()
 export class VideoService {
   constructor(
@@ -24,10 +25,10 @@ export class VideoService {
   ) {}
   private readonly s3 = new S3Client({
     credentials: {
-      accessKeyId: this.configService.get<string>('ACCESS_KEY'),
-      secretAccessKey: this.configService.get<string>('SECRET_KEY'),
+      accessKeyId: this.configService.get<string>(EnvVariables.ACCESS_KEY),
+      secretAccessKey: this.configService.get<string>(EnvVariables.SECRET_KEY),
     },
-    region: this.configService.get<string>('BUCKET_REGION'),
+    region: this.configService.get<string>(EnvVariables.BUCKET_REGION),
   });
 
   async uploadVideo(
@@ -40,7 +41,7 @@ export class VideoService {
       throw new BadRequestException('No file uploaded');
     }
     const Key: string = `${uuid()}-${file.originalname}`;
-    const Bucket = this.configService.get<string>('BUCKET_NAME');
+    const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
     const ContentType = file.mimetype;
     const command = new PutObjectCommand({
       Bucket,

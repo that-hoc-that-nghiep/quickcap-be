@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
+import { EnvVariables } from 'src/constants';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { AuthService } from './auth.service';
         useFactory: async (configService: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
-            urls: [configService.get<string>('RABBITMQ_URL')],
+            urls: [configService.get<string>(EnvVariables.RABBITMQ_URL)],
             queue: 'auth-queue',
           },
         }),

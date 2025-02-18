@@ -7,6 +7,7 @@ import { InviteRepository } from './invite.repository';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from 'src/auth/auth.module';
+import { EnvVariables } from 'src/constants';
 
 @Module({
   imports: [
@@ -16,11 +17,11 @@ import { AuthModule } from 'src/auth/auth.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         transport: {
-          host: configService.get<string>('MAILER_HOST'),
-          port: configService.get<number>('MAILER_PORT'),
+          host: configService.get<string>(EnvVariables.MAILER_HOST),
+          port: configService.get<number>(EnvVariables.MAILER_PORT),
           auth: {
-            user: configService.get<string>('MAILER_EMAIL'),
-            pass: configService.get<string>('MAILER_PASSWORD'),
+            user: configService.get<string>(EnvVariables.MAILER_EMAIL),
+            pass: configService.get<string>(EnvVariables.MAILER_PASSWORD),
           },
         },
       }),
