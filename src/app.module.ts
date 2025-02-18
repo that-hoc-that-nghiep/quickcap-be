@@ -36,12 +36,13 @@ import { EnvVariables } from './constants';
         MAILER_PORT: Joi.number().required(),
         MAILER_EMAIL: Joi.string().required(),
         MAILER_PASSWORD: Joi.string().required(),
+        AUTH_URL: Joi.string().required(),
       }),
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>(EnvVariables.DATABASE_LOCAL_URL),
+        uri: configService.get<string>(EnvVariables.DATABASE_URL),
       }),
       inject: [ConfigService],
     }),

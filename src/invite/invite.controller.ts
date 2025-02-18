@@ -2,8 +2,9 @@ import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { InviteService } from './invite.service';
 import { ApiBody, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { GetUser } from 'src/decorators/get-user.decorator';
-import { User } from 'src/auth/auth.service';
+
 import { CreateInviteDto } from './dto/create-invite.dto';
+import { User } from 'src/constants/user';
 
 @ApiTags('Invite')
 @ApiSecurity('token')

@@ -2,17 +2,13 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  Inject,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
-import { UserPermission, UserSubscription } from 'src/constants/user';
-import { User } from './auth.service';
+import { AuthService } from './auth.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(@Inject('AUTH_SERVICE') private authClient: ClientProxy) {}
+  constructor(private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -23,44 +19,7 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      //   const user = await firstValueFrom(
-      //     this.authClient.send('validate_token', { token }),
-      //   );
-      const user: User = {
-        id: 'user_12345',
-        created_at: '2024-02-05T10:00:00Z',
-        email: 'john.doe@example.com',
-        name: 'John Doe',
-        given_name: 'John',
-        family_name: 'Doe',
-        picture: 'https://randomuser.me/api/portraits/men/1.jpg',
-        locale: 'en-US',
-        metadata: JSON.stringify({ theme: 'dark', role: 'admin' }),
-        subscription: UserSubscription.FREE,
-        organizations: [
-          {
-            id: 'org_001',
-            name: 'Tech Innovators',
-            image: 'https://via.placeholder.com/150',
-            metadata: JSON.stringify({
-              industry: 'Technology',
-              size: '50-100',
-            }),
-            created_at: '2023-06-15T08:30:00Z',
-            is_owner: true,
-            is_permission: UserPermission.ALL,
-          },
-          {
-            id: 'org_002',
-            name: 'Design Masters',
-            image: null,
-            metadata: null,
-            created_at: '2022-04-10T12:00:00Z',
-            is_owner: false,
-            is_permission: UserPermission.READ,
-          },
-        ],
-      };
+      const user = await this.authService.getUserFromToken(token);
 
       if (!user) {
         throw new UnauthorizedException('Invalid token');

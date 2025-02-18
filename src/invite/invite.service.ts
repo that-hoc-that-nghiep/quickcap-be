@@ -1,15 +1,21 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InviteRepository } from './invite.repository';
 import { CreateInviteDto } from './dto/create-invite.dto';
-import { AuthService, User } from 'src/auth/auth.service';
+import { AuthService } from 'src/auth/auth.service';
+import { OrgType } from 'src/constants/org';
+import { User } from 'src/constants/user';
 
 @Injectable()
 export class InviteService {
   constructor(
-    private mailerService: MailerService,
-    private inviteRepository: InviteRepository,
-    private authService: AuthService,
+    private readonly mailerService: MailerService,
+    private readonly inviteRepository: InviteRepository,
+    private readonly authService: AuthService,
   ) {}
 
   async sendInvite(
@@ -18,8 +24,13 @@ export class InviteService {
     createInviteDto: CreateInviteDto,
   ) {
     const { email } = createInviteDto;
-    const orgName = this.authService.getOrgFromUser(user, orgId).name;
-    const content = `You are invited to join ${orgName} org, click accept to confirm`;
+    const orgUser = this.authService.getOrgFromUser(user, orgId);
+    if (orgUser.type === OrgType.PERSONAL) {
+      throw new BadRequestException(
+        'You cannot invite user to your personal org',
+      );
+    }
+    const content = `You are invited to join ${orgUser.name} org, click accept to confirm`;
     const invite = await this.inviteRepository.createInvite(
       user.id,
       orgId,
@@ -51,7 +62,9 @@ export class InviteService {
   }
 
   async acceptInvite(id: string) {
-    const invite = await this.inviteRepository.updateInvite(id, true);
-    return { data: invite, message: 'Invite accepted successfully' };
+    const invite = await this.inviteRepository.getInviteById(id);
+    await this.authService.addUserToOrg(invite.receiverId, invite.orgId);
+    const inviteAccepted = await this.inviteRepository.updateInvite(id, true);
+    return { data: inviteAccepted, message: 'Invite accepted successfully' };
   }
 }

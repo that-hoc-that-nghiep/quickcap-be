@@ -13,8 +13,9 @@ import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 
 import { VideoType } from 'src/constants/video';
-import { AuthService, User } from 'src/auth/auth.service';
+import { AuthService} from 'src/auth/auth.service';
 import { EnvVariables } from 'src/constants';
+import { User } from 'src/constants/user';
 @Injectable()
 export class VideoService {
   constructor(

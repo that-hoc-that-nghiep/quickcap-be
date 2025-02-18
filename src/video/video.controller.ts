@@ -29,7 +29,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { SwaggerArrayConversion } from 'src/interceptors/swagger-array.interceptor';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { VideoType } from 'src/constants/video';
-import { User } from 'src/auth/auth.service';
+import { OrgType } from 'src/constants/org';
+import { User } from 'src/constants/user';
 
 @ApiTags('Video')
 @ApiSecurity('token')
@@ -37,9 +38,11 @@ import { User } from 'src/auth/auth.service';
 export class VideoController {
   constructor(private videoService: VideoService) {}
 
-  @Post(':orgId')
-  @ApiOperation({ summary: 'Upload video' })
-  @ApiParam({ name: 'orgId', type: 'string' })
+  @Post()
+  @ApiOperation({
+    summary: 'Upload video',
+    description: `Video upload on org type **Personal**`,
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -91,8 +94,7 @@ export class VideoController {
     }),
   )
   uploadVideo(
-    @GetUser('id') userId: string,
-    @Param('orgId') orgId: string,
+    @GetUser() user: User,
     @Body() createVideoDto: CreateVideoDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
@@ -100,8 +102,11 @@ export class VideoController {
       ...createVideoDto,
       categoryId: createVideoDto.categoryId[0].split(','),
     };
+    const orgId = user.organizations.find(
+      (org) => org.type === OrgType.PERSONAL,
+    ).id;
     return this.videoService.uploadVideo(
-      userId,
+      user.id,
       orgId,
       remakeCreateVideoDto,
       file,

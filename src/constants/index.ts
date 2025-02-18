@@ -18,4 +18,5 @@ export const EnvVariables: Record<string, string> = {
   MAILER_PORT: 'MAILER_PORT',
   MAILER_EMAIL: 'MAILER_EMAIL',
   MAILER_PASSWORD: 'MAILER_PASSWORD',
+  AUTH_URL: 'AUTH_URL',
 };
