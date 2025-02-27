@@ -7,6 +7,9 @@ export type MediaDocument = HydratedDocument<Media>;
 @Schema({ versionKey: false })
 export class Media {
   @ApiProperty()
+  _id: string;
+
+  @ApiProperty()
   @Prop({ default: null })
   screen: string;
 

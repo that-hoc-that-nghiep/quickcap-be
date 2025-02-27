@@ -7,6 +7,9 @@ export type InviteDocument = HydratedDocument<Invite>;
 @Schema({ versionKey: false })
 export class Invite {
   @ApiProperty()
+  _id: string;
+
+  @ApiProperty()
   @Prop({ required: true })
   senderId: string;
 

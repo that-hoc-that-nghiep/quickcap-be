@@ -1,6 +1,12 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { InviteService } from './invite.service';
-import { ApiBody, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   GetToken,
   GetUser,
@@ -9,6 +15,7 @@ import {
 
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { User } from 'src/constants/user';
+import { InviteResDto } from './dto/invite-res.dto';
 
 @ApiTags('Invite')
 @ApiSecurity('token')
@@ -19,6 +26,11 @@ export class InviteController {
   @Post(':orgId')
   @ApiOperation({ summary: 'Send invite' })
   @ApiBody({ type: CreateInviteDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Invite sent successfully',
+    type: InviteResDto,
+  })
   async sendInvite(
     @GetUserAndToken()
     dataReq: {
@@ -38,12 +50,22 @@ export class InviteController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get invite by id' })
+  @ApiResponse({
+    status: 200,
+    description: 'Invite fetched successfully',
+    type: InviteResDto,
+  })
   async getInviteById(@Param('id') id: string) {
     return this.inviteService.getInviteById(id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Accept invite' })
+  @ApiResponse({
+    status: 200,
+    description: 'Invite accepted successfully',
+    type: InviteResDto,
+  })
   async acceptInvite(@GetToken() token: string, @Param('id') id: string) {
     return this.inviteService.acceptInvite(id, token);
   }

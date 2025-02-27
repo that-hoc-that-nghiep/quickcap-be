@@ -7,6 +7,9 @@ export type CommentDocument = HydratedDocument<Comment>;
 @Schema({ versionKey: false })
 export class Comment {
   @ApiProperty()
+  _id: string;
+
+  @ApiProperty()
   @Prop({ required: true })
   content: string;
 
