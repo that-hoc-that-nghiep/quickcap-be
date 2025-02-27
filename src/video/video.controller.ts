@@ -17,6 +17,7 @@ import {
   ApiConsumes,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
@@ -31,6 +32,9 @@ import { UpdateVideoDto } from './dto/update-video.dto';
 import { VideoType } from 'src/constants/video';
 import { OrgType } from 'src/constants/org';
 import { User } from 'src/constants/user';
+import { Video } from './video.schema';
+import { VideoResponseDto } from './dto/video-res.dto';
+import { VideosResponseDto } from './dto/videos-res.dto';
 
 @ApiTags('Video')
 @ApiSecurity('token')
@@ -93,6 +97,11 @@ export class VideoController {
       },
     }),
   )
+  @ApiResponse({
+    status: 201,
+    description: 'Video uploaded successfully',
+    type: VideoResponseDto,
+  })
   async uploadVideo(
     @GetUser() user: User,
     @Body() createVideoDto: CreateVideoDto,
@@ -120,6 +129,11 @@ export class VideoController {
   @ApiOperation({ summary: 'Get all videos' })
   @ApiParam({ name: 'orgId', type: 'string' })
   @ApiDocsPagination('video')
+  @ApiResponse({
+    status: 200,
+    description: 'Videos fetched successfully',
+    type: VideosResponseDto,
+  })
   getVideos(
     @GetUser() user: User,
     @Param('orgId') orgId: string,
@@ -133,6 +147,11 @@ export class VideoController {
   @Get(':id')
   @ApiOperation({ summary: 'Get video by id' })
   @ApiParam({ name: 'id', type: 'string', example: '67a4697b778e9debdc6745a1' })
+  @ApiResponse({
+    status: 200,
+    description: 'Video fetched successfully',
+    type: VideoResponseDto,
+  })
   getVideoById(@GetUser() user: User, @Param('id') id: string) {
     return this.videoService.getVideoById(user, id);
   }
@@ -167,6 +186,11 @@ export class VideoController {
       },
     },
   })
+  @ApiResponse({
+    status: 200,
+    description: 'Video updated successfully',
+    type: VideoResponseDto,
+  })
   updateVideo(
     @GetUser('id') userId: string,
     @Param('id') id: string,
@@ -178,6 +202,11 @@ export class VideoController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete video by id' })
   @ApiParam({ name: 'id', type: 'string', example: '67a4697b778e9debdc6745a1' })
+  @ApiResponse({
+    status: 200,
+    description: 'Video deleted successfully',
+    type: VideoResponseDto,
+  })
   deleteVideo(@Param('id') id: string) {
     return this.videoService.deleteVideo(id);
   }

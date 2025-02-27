@@ -9,6 +9,9 @@ export type TaskDocument = HydratedDocument<Video>;
 @Schema({ versionKey: false })
 export class Video {
   @ApiProperty()
+  _id: string;
+
+  @ApiProperty()
   @Prop({ default: 'Untilted Video' })
   title: string;
 

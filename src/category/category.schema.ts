@@ -7,6 +7,8 @@ export type CategoryDocument = HydratedDocument<Category>;
 @Schema({ versionKey: false })
 export class Category {
   @ApiProperty()
+  _id: string;
+  @ApiProperty()
   @Prop({ required: true })
   name: string;
 }
