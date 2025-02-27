@@ -11,6 +11,6 @@ export interface Organization {
   type: OrgType;
   timestamp: string;
   created_at: string;
-  is_owner: number;
+  is_owner: boolean;
   is_permission: UserPermission;
 }

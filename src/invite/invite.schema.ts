@@ -16,6 +16,10 @@ export class Invite {
 
   @ApiProperty()
   @Prop({ required: true })
+  emailReceiver: string;
+
+  @ApiProperty()
+  @Prop({ required: true })
   content: string;
 
   @ApiProperty()

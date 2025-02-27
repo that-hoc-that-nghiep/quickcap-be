@@ -1,7 +1,11 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { InviteService } from './invite.service';
 import { ApiBody, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
-import { GetUser } from 'src/decorators/get-user.decorator';
+import {
+  GetToken,
+  GetUser,
+  GetUserAndToken,
+} from 'src/decorators/get-user.decorator';
 
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { User } from 'src/constants/user';
@@ -16,11 +20,20 @@ export class InviteController {
   @ApiOperation({ summary: 'Send invite' })
   @ApiBody({ type: CreateInviteDto })
   async sendInvite(
-    @GetUser() user: User,
+    @GetUserAndToken()
+    dataReq: {
+      user: User;
+      token: string;
+    },
     @Param('orgId') orgId: string,
     @Body() createInviteDto: CreateInviteDto,
   ) {
-    return this.inviteService.sendInvite(user, orgId, createInviteDto);
+    return this.inviteService.sendInvite(
+      dataReq.user,
+      orgId,
+      createInviteDto,
+      dataReq.token,
+    );
   }
 
   @Get(':id')
@@ -31,7 +44,7 @@ export class InviteController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Accept invite' })
-  async acceptInvite(@Param('id') id: string) {
-    return this.inviteService.acceptInvite(id);
+  async acceptInvite(@GetToken() token: string, @Param('id') id: string) {
+    return this.inviteService.acceptInvite(id, token);
   }
 }

@@ -19,6 +19,7 @@ export interface User {
   family_name: string;
   picture: string | null;
   locale: string | null;
+  subscription: UserSubscription;
   timestamp: string;
   organizations: Organization[];
 }

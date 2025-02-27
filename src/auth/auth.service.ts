@@ -6,6 +6,7 @@ import { catchError, firstValueFrom } from 'rxjs';
 import { EnvVariables } from 'src/constants';
 import { Organization } from 'src/constants/org';
 import { User } from 'src/constants/user';
+import { createErrorHandler } from 'src/exception-filters/axios-error-handler';
 
 @Injectable()
 export class AuthService {
@@ -27,17 +28,37 @@ export class AuthService {
     return data;
   }
 
-  async addUserToOrg(userId: string, orgId: string) {
+  async addUserToOrg(email: string, orgId: string, token: string) {
     const { data } = await firstValueFrom(
       this.httpService
-        .put(`${this.authUrl}/org/${orgId}/add`, {
-          usersEmail: [userId],
+        .put(
+          `${this.authUrl}/org/${orgId}/add`,
+          {
+            usersEmail: [email],
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        )
+        .pipe(catchError(createErrorHandler(this.logger, 'add user to org'))),
+    );
+    return data;
+  }
+
+  async getUserById(id: string, token: string) {
+    const { data } = await firstValueFrom(
+      this.httpService
+        .get(`${this.authUrl}/auth/user/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         })
         .pipe(
-          catchError((error: AxiosError) => {
-            this.logger.error(error.response.data);
-            throw new HttpException(error.response.data, error.response.status);
-          }),
+          catchError(
+            createErrorHandler(this.logger, `Not found user by ${id}`),
+          ),
         ),
     );
     return data;
@@ -48,11 +69,9 @@ export class AuthService {
   };
 
   getOrgFromUser = (user: User, orgId: string) => {
-    const org: Organization = user.organizations.find(
-      (org) => org.id === orgId,
-    );
-    console.log('org id', org.id);
-    if (!org) {
+    const org: Organization =
+      user.organizations.find((org) => org.id === orgId) ?? null;
+    if (org === null) {
       throw new HttpException(
         `User not belong to org ${orgId}`,
         HttpStatus.NOT_FOUND,

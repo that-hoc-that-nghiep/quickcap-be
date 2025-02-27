@@ -12,11 +12,13 @@ export class InviteRepository {
     orgId: string,
     content: string,
     createInviteDto: CreateInviteDto,
+    email: string,
   ): Promise<Invite> {
     const { receiverId } = createInviteDto;
     const newInvite = await this.inviteModel.create({
       senderId: userId,
       receiverId,
+      emailReceiver: email,
       content,
       orgId,
     });

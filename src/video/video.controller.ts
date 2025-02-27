@@ -93,7 +93,7 @@ export class VideoController {
       },
     }),
   )
-  uploadVideo(
+  async uploadVideo(
     @GetUser() user: User,
     @Body() createVideoDto: CreateVideoDto,
     @UploadedFile() file: Express.Multer.File,
@@ -105,12 +105,15 @@ export class VideoController {
     const orgId = user.organizations.find(
       (org) => org.type === OrgType.PERSONAL,
     ).id;
-    return this.videoService.uploadVideo(
+    const res = await this.videoService.uploadVideo(
       user.id,
       orgId,
       remakeCreateVideoDto,
       file,
     );
+    // if (createVideoDto.orgId) {
+    // }
+    return res;
   }
 
   @Get('all/:orgId')

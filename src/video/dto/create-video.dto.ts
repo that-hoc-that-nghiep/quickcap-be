@@ -4,6 +4,7 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsMongoId,
+  IsOptional,
   IsString,
 } from 'class-validator';
 

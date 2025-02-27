@@ -6,9 +6,4 @@ export class CreateInviteDto {
   @IsNotEmpty()
   @IsString()
   receiverId: string;
-
-  @ApiProperty({ required: true })
-  @IsNotEmpty()
-  @IsString()
-  email: string;
 }

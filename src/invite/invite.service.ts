@@ -22,8 +22,13 @@ export class InviteService {
     user: User,
     orgId: string,
     createInviteDto: CreateInviteDto,
+    token: string,
   ) {
-    const { email } = createInviteDto;
+    const { receiverId } = createInviteDto;
+    const receiverUser: User = await this.authService.getUserById(
+      receiverId,
+      token,
+    );
     const orgUser = this.authService.getOrgFromUser(user, orgId);
     if (orgUser.type === OrgType.PERSONAL) {
       throw new BadRequestException(
@@ -36,11 +41,12 @@ export class InviteService {
       orgId,
       content,
       createInviteDto,
+      receiverUser.email,
     );
 
     return this.mailerService
       .sendMail({
-        to: email,
+        to: receiverUser.email,
         subject: "You've been invited from Quickcap App",
         text: content,
         html: `<a href="" style="background-color: #000; color: #fff; padding: 5px 10px; border-radius: 10px;">Accept Invite</a>`,
@@ -61,9 +67,13 @@ export class InviteService {
     return { data: invite, message: 'Invite fetched successfully' };
   }
 
-  async acceptInvite(id: string) {
+  async acceptInvite(id: string, token: string) {
     const invite = await this.inviteRepository.getInviteById(id);
-    await this.authService.addUserToOrg(invite.receiverId, invite.orgId);
+    await this.authService.addUserToOrg(
+      invite.emailReceiver,
+      invite.orgId,
+      token,
+    );
     const inviteAccepted = await this.inviteRepository.updateInvite(id, true);
     return { data: inviteAccepted, message: 'Invite accepted successfully' };
   }
