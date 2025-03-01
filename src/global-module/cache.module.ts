@@ -1,4 +1,4 @@
-import { Module, Global } from '@nestjs/common';
+import { Module, Global, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { redisStore } from 'cache-manager-redis-yet';
 import { EnvVariables } from '../constants';
@@ -7,7 +7,7 @@ import {
   CacheModule,
   CacheStore,
 } from '@nestjs/cache-manager';
-
+const logger = new Logger('RedisCache');
 @Global()
 @Module({
   imports: [
@@ -24,8 +24,38 @@ import {
         });
 
         return {
-          store: store as unknown as CacheStore,
-          ttl: 5 * 60 * 1000,
+          store: {
+            get: async (key) => {
+              const value = await store.get(key);
+              if (value) {
+                logger.log(`🔹 Cache HIT: ${key}`);
+              } else {
+                logger.log(`⚠️ Cache MISS: ${key}`);
+              }
+              return value;
+            },
+            set: async (key, value, options) => {
+              const ttlInSeconds = 350;
+
+              logger.log(`✅ Cache SET: ${key}, TTL: ${ttlInSeconds} seconds`);
+
+              const client = (store as any).client;
+              await client.set(key, JSON.stringify(value), {
+                EX: ttlInSeconds,
+              });
+
+              return value;
+            },
+
+            del: async (key) => {
+              return store.del(key);
+            },
+
+            reset: async () => {
+              return store.reset();
+            },
+          } as unknown as CacheStore,
+          ttl: 350000,
         };
       },
       inject: [ConfigService],
