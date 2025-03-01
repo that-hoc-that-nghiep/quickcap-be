@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from './auth/auth.guard';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { EnvVariables } from './constants';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -35,7 +36,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new MongoExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
-
+  app.useGlobalInterceptors(app.get(CacheInterceptor));
   await app.startAllMicroservices();
   await app.listen(configService.get<number>(EnvVariables.PORT) ?? 8080);
 }

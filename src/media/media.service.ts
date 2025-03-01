@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { MediaRepository } from './media.reppository';
-
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 @Injectable()
 export class MediaService {
-  constructor(private mediaRepository: MediaRepository) {}
+  constructor(
+    private mediaRepository: MediaRepository,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   async createMedia(userId: string) {
     const media = await this.mediaRepository.createMedia(userId);
