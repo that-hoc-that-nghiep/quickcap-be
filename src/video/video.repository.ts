@@ -106,9 +106,9 @@ export class VideoRepository {
   async checkVideoOwner(userId: string, videoId: string): Promise<Video> {
     const video = await this.videoModel.findById(videoId);
     if (!video) throw new NotFoundException(`Video id ${videoId} not found`);
-    const videoOwner = await this.videoModel.find({
+    const videoOwner = await this.videoModel.exists({
       _id: videoId,
-      userId,
+      userId: userId,
     });
     if (!videoOwner)
       throw new BadRequestException(

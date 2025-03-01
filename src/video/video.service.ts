@@ -156,7 +156,7 @@ export class VideoService {
       orgUser.is_permission === UserPermission.READ
     ) {
       throw new BadRequestException(
-        'You are not allowed to tranfer this video. Only the owner and user has permission UPLOAD can tranfer the video.',
+        'You are not allowed to tranfer this video. Only the owner of the organization and user has permission UPLOAD can tranfer the video.',
       );
     }
   }
