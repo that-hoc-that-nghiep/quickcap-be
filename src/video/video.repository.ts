@@ -91,4 +91,43 @@ export class VideoRepository {
     const videos = await this.videoModel.find({ categoryId }).exec();
     return videos;
   }
+
+  async getVideosByOrgId(orgId: string): Promise<Video[]> {
+    const videos = await this.videoModel
+      .find({ orgId: { $in: [orgId] } })
+      .exec();
+    return videos;
+  }
+
+  async getUniqueVideosInOrg(
+    orgIdToInclude: string,
+    orgIdExclude: string,
+  ): Promise<Video[]> {
+    const excludedVideoIds = await this.videoModel
+      .find({ orgId: { $in: [orgIdExclude] } })
+      .select('_id')
+      .exec();
+
+    const uniqueVideos = await this.videoModel.find({
+      orgId: { $in: [orgIdToInclude] },
+      _id: { $nin: excludedVideoIds },
+    });
+    return uniqueVideos;
+  }
+
+  async updateVideoOrgId(videoId: string, orgId: string) {
+    const video = await this.videoModel.findById(videoId);
+    if (!video) throw new NotFoundException(`Video id ${videoId} not found`);
+    const updateVideo = await this.videoModel.findByIdAndUpdate(
+      videoId,
+      {
+        $addToSet: { orgId },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+    return updateVideo;
+  }
 }

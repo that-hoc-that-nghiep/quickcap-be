@@ -21,7 +21,7 @@ import { UpdateVideoDto } from './dto/update-video.dto';
 import { VideoType } from 'src/constants/video';
 import { AuthService } from 'src/auth/auth.service';
 import { EnvVariables } from 'src/constants';
-import { User } from 'src/constants/user';
+import { User, UserPermission } from 'src/constants/user';
 @Injectable()
 export class VideoService {
   constructor(
@@ -108,6 +108,14 @@ export class VideoService {
     }
   }
 
+  async getVideosUnique(orgIdPersonal: string, orgIdTranfer: string) {
+    const videos = await this.videoRepository.getUniqueVideosInOrg(
+      orgIdPersonal,
+      orgIdTranfer,
+    );
+    return { data: videos, message: 'Videos fetched successfully' };
+  }
+
   async updateVideo(
     userId: string,
     id: string,
@@ -125,6 +133,31 @@ export class VideoService {
       updateVideoDto,
     );
     return { data: updateVideo, message: 'Video updated successfully' };
+  }
+
+  async tranferLocationVideo(user: User, orgId: string, videoId: string) {
+    const orgUser = this.authService.getOrgFromUser(user, orgId);
+    if (
+      orgUser.is_owner ||
+      orgUser.is_permission === UserPermission.UPLOAD ||
+      orgUser.is_permission === UserPermission.ALL
+    ) {
+      const updateVideo = await this.videoRepository.updateVideoOrgId(
+        videoId,
+        orgId,
+      );
+      return {
+        data: updateVideo,
+        message: `Add VideoId ${videoId} to orgId ${orgId} successfully`,
+      };
+    } else if (
+      !orgUser.is_owner ||
+      orgUser.is_permission === UserPermission.READ
+    ) {
+      throw new BadRequestException(
+        'You are not allowed to tranfer this video. Only the owner and user has permission UPLOAD can tranfer the video.',
+      );
+    }
   }
 
   async deleteVideo(id: string) {

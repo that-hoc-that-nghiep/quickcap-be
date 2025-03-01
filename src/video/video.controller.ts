@@ -139,7 +139,14 @@ export class VideoController {
     @Query('keyword') keyword?: string,
     @Query('categoryId') categoryId?: string,
   ) {
-    return this.videoService.getAllVideos(user, orgId, limit, page, keyword,categoryId);
+    return this.videoService.getAllVideos(
+      user,
+      orgId,
+      limit,
+      page,
+      keyword,
+      categoryId,
+    );
   }
 
   @Get(':id')
@@ -152,6 +159,20 @@ export class VideoController {
   })
   getVideoById(@GetUser() user: User, @Param('id') id: string) {
     return this.videoService.getVideoById(user, id);
+  }
+
+  @Get('unique/:orgId')
+  @ApiOperation({ summary: 'Get unique videos' })
+  @ApiResponse({
+    status: 200,
+    description: 'Videos fetched successfully',
+    type: VideosResponseDto,
+  })
+  async getUniqueVideos(@GetUser() user: User, @Param('orgId') orgId: string) {
+    const orgIdPersonal: string = user.organizations.find(
+      (org) => org.type === OrgType.PERSONAL,
+    ).id;
+    return this.videoService.getVideosUnique(orgIdPersonal, orgId);
   }
 
   @Patch(':id')
