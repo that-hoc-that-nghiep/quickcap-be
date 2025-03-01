@@ -75,6 +75,7 @@ export class VideoService {
     limit: number,
     page: number,
     keyword?: string,
+    categoryId?: string,
   ) {
     if (!this.authService.isUserInOrg(user, orgId)) {
       throw new UnauthorizedException('User is not in the organization');
@@ -84,6 +85,7 @@ export class VideoService {
       limit,
       page,
       keyword,
+      categoryId,
     );
     return { data: videos, message: 'Videos fetched successfully' };
   }

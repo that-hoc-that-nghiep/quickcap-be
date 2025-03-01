@@ -34,6 +34,7 @@ export class VideoRepository {
     limit: number,
     page: number,
     keyword?: string,
+    categoryId?: string,
   ): Promise<{
     videos: Video[];
     total: number;
@@ -44,11 +45,16 @@ export class VideoRepository {
     if (keyword) {
       filter.title = { $regex: keyword, $options: 'i' };
     }
+
+    if (categoryId) {
+      filter.categoryId = { $in: [categoryId] };
+    }
     const skip = (page - 1) * limit;
     const videos = await this.videoModel
       .find(filter)
       .skip(skip)
       .limit(limit)
+      .populate('categoryId')
       .exec();
     const total = await this.videoModel.countDocuments(filter).exec();
     return { videos, total };
@@ -57,7 +63,7 @@ export class VideoRepository {
   async getVideoById(id: string): Promise<Video> {
     const video = await this.videoModel
       .findById(id)
-      .populate('categoryId') 
+      .populate('categoryId')
       .exec();
     if (!video) throw new NotFoundException(`Video id ${id} not found`);
     return video;

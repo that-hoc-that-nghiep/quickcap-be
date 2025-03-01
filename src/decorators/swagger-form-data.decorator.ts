@@ -103,5 +103,11 @@ export function ApiDocsPagination(entity: string) {
       required: false,
       description: 'Search by title video',
     }),
+    ApiQuery({
+      name: 'categoryId',
+      type: String,
+      required: false,
+      description: 'Filter by category id',
+    }),
   );
 }

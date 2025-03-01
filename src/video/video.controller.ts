@@ -137,8 +137,9 @@ export class VideoController {
     @Query('limit', ParseIntPipe) limit: number,
     @Query('page', ParseIntPipe) page: number,
     @Query('keyword') keyword?: string,
+    @Query('categoryId') categoryId?: string,
   ) {
-    return this.videoService.getAllVideos(user, orgId, limit, page, keyword);
+    return this.videoService.getAllVideos(user, orgId, limit, page, keyword,categoryId);
   }
 
   @Get(':id')
