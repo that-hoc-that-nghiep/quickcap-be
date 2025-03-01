@@ -1,21 +1,27 @@
 import {
   BadRequestException,
+  Delete,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { VideoRepository } from './video.repository';
 import { CategoryRepository } from 'src/category/category.repository';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuid } from 'uuid';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 
 import { VideoType } from 'src/constants/video';
-import { AuthService} from 'src/auth/auth.service';
+import { AuthService } from 'src/auth/auth.service';
 import { EnvVariables } from 'src/constants';
-import { User } from 'src/constants/user';
+import { User, UserPermission } from 'src/constants/user';
 @Injectable()
 export class VideoService {
   constructor(
@@ -69,6 +75,7 @@ export class VideoService {
     limit: number,
     page: number,
     keyword?: string,
+    categoryId?: string,
   ) {
     if (!this.authService.isUserInOrg(user, orgId)) {
       throw new UnauthorizedException('User is not in the organization');
@@ -78,6 +85,7 @@ export class VideoService {
       limit,
       page,
       keyword,
+      categoryId,
     );
     return { data: videos, message: 'Videos fetched successfully' };
   }
@@ -100,6 +108,14 @@ export class VideoService {
     }
   }
 
+  async getVideosUnique(orgIdPersonal: string, orgIdTranfer: string) {
+    const videos = await this.videoRepository.getUniqueVideosInOrg(
+      orgIdPersonal,
+      orgIdTranfer,
+    );
+    return { data: videos, message: 'Videos fetched successfully' };
+  }
+
   async updateVideo(
     userId: string,
     id: string,
@@ -119,8 +135,46 @@ export class VideoService {
     return { data: updateVideo, message: 'Video updated successfully' };
   }
 
+  async tranferLocationVideo(user: User, orgId: string, videoId: string) {
+    await this.videoRepository.checkVideoOwner(user.id, videoId);
+    const orgUser = this.authService.getOrgFromUser(user, orgId);
+    if (
+      orgUser.is_owner ||
+      orgUser.is_permission === UserPermission.UPLOAD ||
+      orgUser.is_permission === UserPermission.ALL
+    ) {
+      const updateVideo = await this.videoRepository.updateVideoOrgId(
+        videoId,
+        orgId,
+      );
+      return {
+        data: updateVideo,
+        message: `Add VideoId ${videoId} to orgId ${orgId} successfully`,
+      };
+    } else if (
+      !orgUser.is_owner ||
+      orgUser.is_permission === UserPermission.READ
+    ) {
+      throw new BadRequestException(
+        'You are not allowed to tranfer this video. Only the owner of the organization and user has permission UPLOAD can tranfer the video.',
+      );
+    }
+  }
+
   async deleteVideo(id: string) {
-    const video = await this.videoRepository.deleteVideo(id);
+    const video = await this.videoRepository.getVideoById(id);
+    if (!video) throw new NotFoundException(`Video id ${id} not found`);
+    const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
+    try {
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket,
+        Key: video.source,
+      });
+      await this.s3.send(deleteCommand);
+      await this.videoRepository.deleteVideo(id);
+    } catch (e) {
+      throw new InternalServerErrorException('Error deleting video on aws S3');
+    }
     return { data: video, message: 'Video deleted successfully' };
   }
 }

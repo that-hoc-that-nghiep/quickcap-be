@@ -3,7 +3,7 @@ import { Organization } from './org';
 export enum UserPermission {
   ALL = 'ALL',
   READ = 'READ',
-  WRITE = 'WRITE',
+  UPLOAD = 'UPLOAD',
 }
 
 export enum UserSubscription {

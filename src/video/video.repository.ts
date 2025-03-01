@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Video } from './video.schema';
 import { Model } from 'mongoose';
@@ -34,6 +38,7 @@ export class VideoRepository {
     limit: number,
     page: number,
     keyword?: string,
+    categoryId?: string,
   ): Promise<{
     videos: Video[];
     total: number;
@@ -44,11 +49,16 @@ export class VideoRepository {
     if (keyword) {
       filter.title = { $regex: keyword, $options: 'i' };
     }
+
+    if (categoryId) {
+      filter.categoryId = { $in: [categoryId] };
+    }
     const skip = (page - 1) * limit;
     const videos = await this.videoModel
       .find(filter)
       .skip(skip)
       .limit(limit)
+      .populate('categoryId')
       .exec();
     const total = await this.videoModel.countDocuments(filter).exec();
     return { videos, total };
@@ -79,5 +89,63 @@ export class VideoRepository {
     const video = await this.videoModel.findByIdAndDelete(id).exec();
     if (!video) throw new NotFoundException(`Video id ${id} not found`);
     return video;
+  }
+
+  async getVideosByCategoryId(categoryId: string): Promise<Video[]> {
+    const videos = await this.videoModel.find({ categoryId }).exec();
+    return videos;
+  }
+
+  async getVideosByOrgId(orgId: string): Promise<Video[]> {
+    const videos = await this.videoModel
+      .find({ orgId: { $in: [orgId] } })
+      .exec();
+    return videos;
+  }
+
+  async checkVideoOwner(userId: string, videoId: string): Promise<Video> {
+    const video = await this.videoModel.findById(videoId);
+    if (!video) throw new NotFoundException(`Video id ${videoId} not found`);
+    const videoOwner = await this.videoModel.exists({
+      _id: videoId,
+      userId: userId,
+    });
+    if (!videoOwner)
+      throw new BadRequestException(
+        `You are not the owner of video id ${videoId}`,
+      );
+    return video;
+  }
+
+  async getUniqueVideosInOrg(
+    orgIdToInclude: string,
+    orgIdExclude: string,
+  ): Promise<Video[]> {
+    const excludedVideoIds = await this.videoModel
+      .find({ orgId: { $in: [orgIdExclude] } })
+      .select('_id')
+      .exec();
+
+    const uniqueVideos = await this.videoModel.find({
+      orgId: { $in: [orgIdToInclude] },
+      _id: { $nin: excludedVideoIds },
+    });
+    return uniqueVideos;
+  }
+
+  async updateVideoOrgId(videoId: string, orgId: string) {
+    const video = await this.videoModel.findById(videoId);
+    if (!video) throw new NotFoundException(`Video id ${videoId} not found`);
+    const updateVideo = await this.videoModel.findByIdAndUpdate(
+      videoId,
+      {
+        $addToSet: { orgId },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+    return updateVideo;
   }
 }
