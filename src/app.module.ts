@@ -12,6 +12,9 @@ import { ConversationModule } from './conversation/conversation.module';
 import { AuthModule } from './auth/auth.module';
 import * as Joi from 'joi';
 import { EnvVariables } from './constants';
+import { CacheModule, CacheStore } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
+import { GlobalCacheModule } from './global-module/cache.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -46,6 +49,7 @@ import { EnvVariables } from './constants';
       }),
       inject: [ConfigService],
     }),
+    GlobalCacheModule,
     VideoModule,
     CategoryModule,
     CommentModule,
