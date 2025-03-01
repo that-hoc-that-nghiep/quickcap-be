@@ -136,6 +136,7 @@ export class VideoService {
   }
 
   async tranferLocationVideo(user: User, orgId: string, videoId: string) {
+    await this.videoRepository.checkVideoOwner(user.id, videoId);
     const orgUser = this.authService.getOrgFromUser(user, orgId);
     if (
       orgUser.is_owner ||

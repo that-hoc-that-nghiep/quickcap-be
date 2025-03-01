@@ -35,6 +35,7 @@ import { User } from 'src/constants/user';
 import { Video } from './video.schema';
 import { VideoResponseDto } from './dto/video-res.dto';
 import { VideosResponseDto } from './dto/videos-res.dto';
+import { TranferVideoDto } from './dto/tranfer-video.dto';
 
 @ApiTags('Video')
 @ApiSecurity('token')
@@ -173,6 +174,24 @@ export class VideoController {
       (org) => org.type === OrgType.PERSONAL,
     ).id;
     return this.videoService.getVideosUnique(orgIdPersonal, orgId);
+  }
+
+  @Patch('tranfer')
+  @ApiOperation({ summary: 'Tranfer location video to another organization' })
+  @ApiBody({
+    type: TranferVideoDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Video tranfer successfully',
+    type: VideoResponseDto,
+  })
+  async tranferVideo(
+    @GetUser() user: User,
+    @Body() tranferVideoDto: TranferVideoDto,
+  ) {
+    const { videoId, orgId } = tranferVideoDto;
+    return this.videoService.tranferLocationVideo(user, orgId, videoId);
   }
 
   @Patch(':id')

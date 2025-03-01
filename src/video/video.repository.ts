@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Video } from './video.schema';
 import { Model } from 'mongoose';
@@ -97,6 +101,20 @@ export class VideoRepository {
       .find({ orgId: { $in: [orgId] } })
       .exec();
     return videos;
+  }
+
+  async checkVideoOwner(userId: string, videoId: string): Promise<Video> {
+    const video = await this.videoModel.findById(videoId);
+    if (!video) throw new NotFoundException(`Video id ${videoId} not found`);
+    const videoOwner = await this.videoModel.find({
+      _id: videoId,
+      userId,
+    });
+    if (!videoOwner)
+      throw new BadRequestException(
+        `You are not the owner of video id ${videoId}`,
+      );
+    return video;
   }
 
   async getUniqueVideosInOrg(
