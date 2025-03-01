@@ -57,7 +57,7 @@ export class VideoRepository {
   async getVideoById(id: string): Promise<Video> {
     const video = await this.videoModel
       .findById(id)
-      .populate('categoryId')
+      .populate('categoryId') 
       .exec();
     if (!video) throw new NotFoundException(`Video id ${id} not found`);
     return video;
@@ -79,5 +79,10 @@ export class VideoRepository {
     const video = await this.videoModel.findByIdAndDelete(id).exec();
     if (!video) throw new NotFoundException(`Video id ${id} not found`);
     return video;
+  }
+
+  async getVideosByCategoryId(categoryId: string): Promise<Video[]> {
+    const videos = await this.videoModel.find({ categoryId }).exec();
+    return videos;
   }
 }

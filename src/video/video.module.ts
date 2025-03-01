@@ -20,5 +20,6 @@ import { AuthModule } from 'src/auth/auth.module';
   ],
   controllers: [VideoController],
   providers: [VideoService, VideoRepository],
+  exports: [VideoService, VideoRepository],
 })
 export class VideoModule {}

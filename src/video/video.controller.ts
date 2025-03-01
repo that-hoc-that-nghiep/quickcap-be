@@ -80,7 +80,6 @@ export class VideoController {
       required: ['title', 'description', 'summary', 'file'],
     },
   })
-  @UseInterceptors(new SwaggerArrayConversion('categoryId'))
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: (req, file, callback) => {
@@ -120,8 +119,6 @@ export class VideoController {
       remakeCreateVideoDto,
       file,
     );
-    // if (createVideoDto.orgId) {
-    // }
     return res;
   }
 
