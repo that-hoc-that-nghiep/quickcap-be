@@ -1,19 +1,25 @@
 import {
   BadRequestException,
+  Delete,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { VideoRepository } from './video.repository';
 import { CategoryRepository } from 'src/category/category.repository';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuid } from 'uuid';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 
 import { VideoType } from 'src/constants/video';
-import { AuthService} from 'src/auth/auth.service';
+import { AuthService } from 'src/auth/auth.service';
 import { EnvVariables } from 'src/constants';
 import { User } from 'src/constants/user';
 @Injectable()
@@ -120,7 +126,19 @@ export class VideoService {
   }
 
   async deleteVideo(id: string) {
-    const video = await this.videoRepository.deleteVideo(id);
+    const video = await this.videoRepository.getVideoById(id);
+    if (!video) throw new NotFoundException(`Video id ${id} not found`);
+    const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
+    try {
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket,
+        Key: video.source,
+      });
+      await this.s3.send(deleteCommand);
+      await this.videoRepository.deleteVideo(id);
+    } catch (e) {
+      throw new InternalServerErrorException('Error deleting video on aws S3');
+    }
     return { data: video, message: 'Video deleted successfully' };
   }
 }
