@@ -35,7 +35,11 @@ export class InviteService {
         'You cannot invite user to your personal org',
       );
     }
-    const content = `You are invited to join ${orgUser.name} org, click accept to confirm`;
+    const subject = `Invitation to Join ${orgUser.name} on Quickcap App`;
+    const content = `You have been invited to join the organization "${orgUser.name}" on Quickcap App by ${user.name}. 
+    
+Click the "Accept Invite" button below to join the organization:`;
+    const inviteLink = 'https://app.quickcap.live';
     const invite = await this.inviteRepository.createInvite(
       user.id,
       orgId,
@@ -47,9 +51,26 @@ export class InviteService {
     return this.mailerService
       .sendMail({
         to: receiverUser.email,
-        subject: "You've been invited from Quickcap App",
-        text: content,
-        html: `<a href="" style="background-color: #000; color: #fff; padding: 5px 10px; border-radius: 10px;">Accept Invite</a>`,
+        subject: subject,
+        text: `${content}
+        
+Invite Link: ${inviteLink}`,
+        html: ` <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2>Organization Invitation</h2>
+            <p>${content}</p>
+            <a href="${inviteLink}" 
+               style="display: inline-block; background-color: #000; 
+                      color: #fff; 
+                      padding: 10px 20px; 
+                      text-decoration: none; 
+                      border-radius: 5px; 
+                      margin-top: 15px;">
+              Accept Invite
+            </a>
+            <p style="margin-top: 20px; font-size: 12px; color: #666;">
+              If the button doesn't work, copy and paste this link: ${inviteLink}
+            </p>
+          </div>`,
       })
       .then(() => ({
         message: 'Invite sent successfully',
