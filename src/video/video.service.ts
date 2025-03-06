@@ -22,6 +22,7 @@ import { VideoType } from 'src/constants/video';
 import { AuthService } from 'src/auth/auth.service';
 import { EnvVariables } from 'src/constants';
 import { User, UserPermission } from 'src/constants/user';
+import { OrgType } from 'src/constants/org';
 @Injectable()
 export class VideoService {
   constructor(
@@ -138,6 +139,11 @@ export class VideoService {
   async tranferLocationVideo(user: User, orgId: string, videoId: string) {
     await this.videoRepository.checkVideoOwner(user.id, videoId);
     const orgUser = this.authService.getOrgFromUser(user, orgId);
+    if (orgUser.type === OrgType.PERSONAL) {
+      throw new BadRequestException(
+        'You are not allowed to tranfer this video to org type PERSONAL.You only can tranfer the video from org type ORGANIZATION',
+      );
+    }
     if (
       orgUser.is_owner ||
       orgUser.is_permission === UserPermission.UPLOAD ||
@@ -176,5 +182,27 @@ export class VideoService {
       throw new InternalServerErrorException('Error deleting video on aws S3');
     }
     return { data: video, message: 'Video deleted successfully' };
+  }
+
+  async removeVideoFromOrg(user: User, videoId: string, orgId: string) {
+    const org = this.authService.getOrgFromUser(user, orgId);
+    if (org.type === OrgType.PERSONAL) {
+      throw new BadRequestException(
+        'You are not allowed to remove this video from org type PERSONAL. You only can remove the video from org type ORGANIZATION.',
+      );
+    }
+    if (!org.is_owner) {
+      throw new BadRequestException(
+        'You are not allowed to remove this video. Only the owner of the organization can remove the video.',
+      );
+    }
+    const videoRemoved = await this.videoRepository.removeVideoFromOrg(
+      videoId,
+      orgId,
+    );
+    return {
+      data: videoRemoved,
+      message: `VideoId ${videoId} removed from orgId ${orgId} successfull`,
+    };
   }
 }

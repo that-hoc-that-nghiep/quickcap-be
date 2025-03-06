@@ -148,4 +148,24 @@ export class VideoRepository {
     );
     return updateVideo;
   }
+
+  async removeVideoFromOrg(videoId: string, orgId: string) {
+    const video = await this.getVideoById(videoId);
+    if (!video.orgId.includes(orgId)) {
+      throw new BadRequestException(
+        `OrgId ${orgId} does not exist in videoId ${videoId}`,
+      );
+    }
+    const updateVideo = await this.videoModel.findByIdAndUpdate(
+      videoId,
+      {
+        $pull: { orgId: orgId },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+    return updateVideo;
+  }
 }

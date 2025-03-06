@@ -248,4 +248,27 @@ export class VideoController {
   deleteVideo(@Param('id') id: string) {
     return this.videoService.deleteVideo(id);
   }
+
+  @Delete(':id/:orgId')
+  @ApiOperation({ summary: 'Remove video from org' })
+  @ApiParam({
+    name: 'id',
+    type: 'string',
+  })
+  @ApiParam({
+    name: 'orgId',
+    type: 'string',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Video removed successfully',
+    type: VideoResponseDto,
+  })
+  removeVideoFromOrg(
+    @GetUser() user: User,
+    @Param('id') videoId: string,
+    @Param('orgId') orgId: string,
+  ) {
+    return this.videoService.removeVideoFromOrg(user, videoId, orgId);
+  }
 }
