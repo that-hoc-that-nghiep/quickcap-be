@@ -13,11 +13,14 @@ import { CacheInterceptor } from '@nestjs/cache-manager';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
-
+  app.enableCors({ origin: '*' });
   app.connectMicroservice<MicroserviceOptions>({
     options: {
       urls: [configService.get<string>(EnvVariables.RABBITMQ_URL)],
-      queue: 'auth_queue',
+      queue: 'sum_queue',
+      queueOptions: {
+        durable: false,
+      },
     },
   });
   app.setGlobalPrefix('api/v1');
