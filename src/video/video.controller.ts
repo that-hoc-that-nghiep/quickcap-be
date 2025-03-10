@@ -57,32 +57,12 @@ export class VideoController {
     schema: {
       type: 'object',
       properties: {
-        title: {
-          type: 'string',
-          default: 'this is title',
-        },
-        description: {
-          type: 'string',
-          default: 'the action of providing or supplying something for use.',
-        },
-        summary: {
-          type: 'string',
-          default: 'this is summary',
-        },
-        'categoryId[]': {
-          type: 'array',
-          items: {
-            type: 'string',
-            default: '',
-          },
-          default: ['67a357027044f67fd112f501', '67a461334e30fba0ac5103f8'],
-        },
         file: {
           type: 'string',
           format: 'binary',
         },
       },
-      required: ['title', 'description', 'summary', 'file'],
+      required: ['file'],
     },
   })
   @UseInterceptors(
@@ -108,22 +88,12 @@ export class VideoController {
   })
   async uploadVideo(
     @GetUser() user: User,
-    @Body() createVideoDto: CreateVideoDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const remakeCreateVideoDto = {
-      ...createVideoDto,
-      categoryId: createVideoDto.categoryId[0].split(','),
-    };
     const orgId = user.organizations.find(
       (org) => org.type === OrgType.PERSONAL,
     ).id;
-    const res = await this.videoService.uploadVideo(
-      user.id,
-      orgId,
-      remakeCreateVideoDto,
-      file,
-    );
+    const res = await this.videoService.uploadVideo(user.id, orgId, file);
     return res;
   }
 

@@ -59,16 +59,12 @@ export class VideoService {
     region: this.configService.get<string>(EnvVariables.BUCKET_REGION),
   });
 
-  async uploadVideo(
-    userId: string,
-    orgId: string,
-    createVideoDto: CreateVideoDto,
-    file: Express.Multer.File,
-  ) {
+  async uploadVideo(userId: string, orgId: string, file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
-    const Key: string = `${uuid()}-${file.originalname}`;
+    const sanitizedFileName = file.originalname.replace(/\s+/g, '_');
+    const Key: string = `${uuid()}-${sanitizedFileName}`;
     const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
     const ContentType = file.mimetype;
     const command = new PutObjectCommand({
@@ -80,13 +76,8 @@ export class VideoService {
 
     const fileStatus = await this.s3.send(command);
     if (fileStatus.$metadata.httpStatusCode === 200) {
-      const video = await this.videoRepository.createVideo(
-        userId,
-        orgId,
-        Key,
-        createVideoDto,
-      );
-      return { data: video, message: 'Video uploaded successfully' };
+      this.logger.log(`File uploaded s3 successfully ${Key}`);
+      return await this.transcriptAndProcess(userId, orgId, Key);
     }
   }
 
