@@ -19,7 +19,7 @@ export class VideoRepository {
     source: string,
     createVideoDto: CreateVideoDto,
   ): Promise<Video> {
-    const { title, description, summary, categoryId } = createVideoDto;
+    const { title, description, transcript, categoryId } = createVideoDto;
     console.log('data from create video dto', createVideoDto);
     const video = await this.videoModel.create({
       title,
@@ -27,7 +27,7 @@ export class VideoRepository {
       source,
       userId,
       orgId,
-      summary,
+      transcript,
       categoryId,
     });
     return video.populate('categoryId');
@@ -160,6 +160,22 @@ export class VideoRepository {
       videoId,
       {
         $pull: { orgId: orgId },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+    return updateVideo;
+  }
+
+  async updateIsNSWF(isNSWF: boolean, videoId: string) {
+    const video = await this.videoModel.findById(videoId);
+    if (!video) throw new NotFoundException(`Video id ${videoId} not found`);
+    const updateVideo = await this.videoModel.findByIdAndUpdate(
+      videoId,
+      {
+        $set: { isNSWF },
       },
       {
         new: true,

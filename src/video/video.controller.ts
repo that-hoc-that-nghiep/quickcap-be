@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   ParseIntPipe,
   Patch,
@@ -23,11 +24,9 @@ import {
 } from '@nestjs/swagger';
 import { VideoService } from './video.service';
 import { ApiDocsPagination } from 'src/decorators/swagger-form-data.decorator';
-
 import { GetUser } from 'src/decorators/get-user.decorator';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { SwaggerArrayConversion } from 'src/interceptors/swagger-array.interceptor';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { VideoType } from 'src/constants/video';
 import { OrgType } from 'src/constants/org';
@@ -36,13 +35,18 @@ import { Video } from './video.schema';
 import { VideoResponseDto } from './dto/video-res.dto';
 import { VideosResponseDto } from './dto/videos-res.dto';
 import { TranferVideoDto } from './dto/tranfer-video.dto';
+import { TestDto } from './dto/test.dto';
+import { Ctx, EventPattern, Payload } from '@nestjs/microservices';
+import { ResultNSFWRes } from './dto/result-nswf.res';
+import { CheckNSFWRes } from './dto/test.res.dto';
+import { checkNsfwReq } from './dto/check-nswf.req';
 
 @ApiTags('Video')
 @ApiSecurity('token')
 @Controller('video')
 export class VideoController {
   constructor(private videoService: VideoService) {}
-
+  private readonly logger = new Logger(VideoController.name);
   @Post()
   @ApiOperation({
     summary: 'Upload video',
@@ -270,5 +274,49 @@ export class VideoController {
     @Param('orgId') orgId: string,
   ) {
     return this.videoService.removeVideoFromOrg(user, videoId, orgId);
+  }
+
+  @Post('test/:orgId')
+  @ApiOperation({ summary: 'Test' })
+  @ApiBody({
+    type: TestDto,
+    examples: {
+      video_1: {
+        value: {
+          videoUrl: 's3://quickcap-bucket-video/baigiangmontiengnhat.mp4',
+        },
+      },
+    },
+  })
+  @ApiParam({
+    name: 'orgId',
+    type: 'string',
+  })
+  test(
+    @GetUser('id') userId: string,
+    @Param('orgId') orgId: string,
+    @Body() testDto: TestDto,
+  ) {
+    return this.videoService.test(userId, orgId, testDto);
+  }
+
+  @EventPattern('forward-video-data')
+  async processVideoData(@Payload() data: any) {
+    this.videoService.processVideoData(data);
+  }
+
+  @EventPattern('forward-check-nsfw')
+  async checkNsfw(@Payload() data: checkNsfwReq, @Ctx() context: any) {
+    this.videoService.checkNsfw(data.videoUrl, data.videoId);
+  }
+
+  @EventPattern('nsfw-result')
+  handleCheckNsfw(data: ResultNSFWRes) {
+    try {
+      console.log('Received nsfw-result event. Data:', JSON.stringify(data));
+      // Xử lý việc kiểm tra video
+    } catch (error) {
+      console.error('Error handling nsfw-result event:', error);
+    }
   }
 }

@@ -1,8 +1,8 @@
 import {
   BadRequestException,
-  Delete,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -17,12 +17,27 @@ import { ConfigService } from '@nestjs/config';
 import { v4 as uuid } from 'uuid';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
-
 import { VideoType } from 'src/constants/video';
 import { AuthService } from 'src/auth/auth.service';
 import { EnvVariables } from 'src/constants';
 import { User, UserPermission } from 'src/constants/user';
 import { OrgType } from 'src/constants/org';
+import { TestDto } from './dto/test.dto';
+import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
+import { VideoDataRes } from './dto/video-data.res';
+import { TranscribeRes } from './dto/transcibe.res';
+import { convertS3Url } from 'src/utlis';
+
+interface VideoTemp {
+  source: string;
+  userId: string;
+  orgId: string;
+  title: string;
+  description: string;
+  transcript: string;
+  categoryId: string[];
+  s3Url: string;
+}
 @Injectable()
 export class VideoService {
   constructor(
@@ -30,7 +45,9 @@ export class VideoService {
     private videoRepository: VideoRepository,
     private categoryRepository: CategoryRepository,
     private configService: ConfigService,
+    public readonly rabbitmqService: RabbitmqService,
   ) {}
+  private readonly logger = new Logger(VideoService.name);
   private readonly s3 = new S3Client({
     credentials: {
       accessKeyId: this.configService.get<string>(EnvVariables.ACCESS_KEY),
@@ -204,5 +221,134 @@ export class VideoService {
       data: videoRemoved,
       message: `VideoId ${videoId} removed from orgId ${orgId} successfull`,
     };
+  }
+
+  async test(userId: string, orgId: string, testDto: TestDto) {
+    const { videoUrl } = testDto;
+
+    await this.transcriptVideo(userId, orgId, videoUrl);
+  }
+
+  async transcriptVideo(userId: string, orgId: string, videoUrl: string) {
+    let video: VideoTemp = {
+      source: videoUrl,
+      userId,
+      orgId,
+      title: '',
+      description: '',
+      transcript: '',
+      categoryId: [],
+      s3Url: '',
+    };
+    const s3Url = convertS3Url(videoUrl);
+    this.logger.log(`Starting video processing for: ${s3Url}`);
+    video.s3Url = s3Url;
+    try {
+      this.rabbitmqService
+        .sendMessage({ cmd: 'transcribe' }, { s3Url })
+        .subscribe({
+          next: async (transcribeResponse: TranscribeRes) => {
+            this.logger.log(`Transcription response:`, transcribeResponse);
+
+            if (!transcribeResponse.transcript) {
+              this.logger.warn(
+                `Unable to receive transcript, stopping processing.`,
+              );
+              return;
+            }
+
+            video.transcript = transcribeResponse.transcript;
+
+            this.logger.log('Forward video data for processing');
+            const categories = await this.categoryRepository.getCategories();
+            const categoryNames = categories.map((category) => category.name);
+            this.rabbitmqService.emitEvent('forward-video-data', {
+              transcript: transcribeResponse.transcript,
+              categories: categoryNames,
+              videoData: video,
+            });
+          },
+          error: (error) => {
+            this.logger.error(`Error transcribing video:`, error);
+          },
+        });
+    } catch (error) {
+      this.logger.error(`Error in test method:`, error);
+      throw new InternalServerErrorException('Error transcriptVideo');
+    }
+  }
+
+  async processVideoData(data: {
+    transcript: string;
+    categories: string[];
+    videoData: VideoTemp;
+  }) {
+    this.logger.log('Received forward-video-data event. Data:', data);
+    let video: VideoTemp = data.videoData;
+    try {
+      this.rabbitmqService
+        .sendMessage(
+          { cmd: 'video-data' },
+          {
+            transcript: data.transcript,
+            categories: data.categories,
+          },
+        )
+        .subscribe(async (res: VideoDataRes) => {
+          this.logger.log('Res from video data', res);
+          video.title = res.title;
+          video.description = res.description;
+
+          if (res.isNewCategory) {
+            this.logger.log('Is new category');
+            const newCategory = await this.categoryRepository.createCatogory({
+              name: res.category,
+            });
+            video.categoryId.push(newCategory._id);
+            this.saveNewVideo(video);
+          } else {
+            const category = await this.categoryRepository.getCategoryByName(
+              res.category,
+            );
+            video.categoryId.push(category._id);
+            this.saveNewVideo(video);
+          }
+        });
+    } catch (error) {
+      this.logger.error(`Error processing video data:`, error);
+      throw new InternalServerErrorException('Error processVideoData');
+    }
+  }
+
+  async saveNewVideo(video: VideoTemp) {
+    try {
+      const newVideo = await this.videoRepository.createVideo(
+        video.userId,
+        video.orgId,
+        video.source,
+        {
+          title: video.title,
+          description: video.description,
+          categoryId: video.categoryId,
+          transcript: video.transcript,
+        },
+      );
+      this.logger.log('Create video', newVideo);
+      this.rabbitmqService.emitEvent('forward-check-nsfw', {
+        videoId: newVideo._id,
+        videoUrl: video.s3Url,
+      });
+    } catch (e) {
+      this.logger.error('Save new Video error');
+      throw new InternalServerErrorException('Error saveNewVideo');
+    }
+  }
+
+  async checkNsfw(videoId: string, videoUrl: string) {
+    this.logger.log('Process check-nsfw event.');
+    this.rabbitmqService.emitEvent('check-nsfw', {
+      videoUrl,
+      videoId,
+    });
   }
 }

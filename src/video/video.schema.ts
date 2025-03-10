@@ -50,7 +50,7 @@ export class Video {
 
   @ApiProperty()
   @Prop({ default: 'No summary' })
-  summary: string;
+  transcript: string;
 
   @ApiProperty()
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }])
@@ -59,5 +59,9 @@ export class Video {
   @ApiProperty()
   @Prop({ default: Date.now() })
   createdAt: Date;
+
+  @ApiProperty()
+  @Prop({ default: false })
+  isNSWF: boolean;
 }
 export const VideoSchema = SchemaFactory.createForClass(Video);

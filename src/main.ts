@@ -3,23 +3,28 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { MongoExceptionFilter } from './exception-filters/mongo-exception.filter';
 import { TransformInterceptor } from './interceptors/transform.interceptor';
-import { MicroserviceOptions } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from './auth/auth.guard';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { EnvVariables } from './constants';
+import { EnvVariables, QUEUE_NAME } from './constants';
 import { CacheInterceptor } from '@nestjs/cache-manager';
+import { RabbitMQExceptionFilter } from './exception-filters/rabbitmq-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug'],
+  });
   const configService = app.get(ConfigService);
   app.enableCors({ origin: '*' });
+  const rmqUrl = configService.get('RABBITMQ_URL') || 'amqp://localhost:5672';
   app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
     options: {
-      urls: [configService.get<string>(EnvVariables.RABBITMQ_URL)],
-      queue: 'sum_queue',
+      urls: [rmqUrl],
+      queue: QUEUE_NAME,
       queueOptions: {
-        durable: false,
+        durable: true,
       },
     },
   });
@@ -37,7 +42,10 @@ async function bootstrap() {
   });
   app.useGlobalGuards(app.get(AuthGuard));
   app.useGlobalPipes(new ValidationPipe());
-  app.useGlobalFilters(new MongoExceptionFilter());
+  app.useGlobalFilters(
+    new MongoExceptionFilter(),
+    new RabbitMQExceptionFilter(),
+  );
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalInterceptors(app.get(CacheInterceptor));
   await app.startAllMicroservices();

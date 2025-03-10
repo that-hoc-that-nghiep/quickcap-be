@@ -6,9 +6,7 @@ import { Video, VideoSchema } from './video.schema';
 import { VideoRepository } from './video.repository';
 import { CategoryModule } from 'src/category/category.module';
 import { AuthModule } from 'src/auth/auth.module';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { EnvVariables } from 'src/constants';
+import { RabbitmqModule } from 'src/rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -20,23 +18,7 @@ import { EnvVariables } from 'src/constants';
     ]),
     CategoryModule,
     AuthModule,
-    ClientsModule.registerAsync([
-      {
-        imports: [ConfigModule],
-        name: 'VIDEO_SERVICE',
-        useFactory: async (configService: ConfigService) => ({
-          transport: Transport.RMQ,
-          options: {
-            urls: [configService.get<string>(EnvVariables.RABBITMQ_URL)],
-            queue: 'video_queue',
-            queueOptions: {
-              durable: false,
-            },
-          },
-        }),
-        inject: [ConfigService],
-      },
-    ]),
+    RabbitmqModule,
   ],
   controllers: [VideoController],
   providers: [VideoService, VideoRepository],

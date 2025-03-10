@@ -19,7 +19,7 @@ export class CreateVideoDto {
 
   @ApiProperty()
   @IsString()
-  summary: string;
+  transcript: string;
 
   @IsArray()
   @ArrayMinSize(1)
