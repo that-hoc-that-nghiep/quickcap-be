@@ -357,11 +357,11 @@ export class VideoService {
     }
   }
 
-  async updateNswf() {
-    return this.videoRepository.updateVideoNSWF(
-      '67cf23c43ca933d5310b2605',
-      true,
-      'Drawing',
-    );
-  }
+  // async updateNswf() {
+  //   return this.videoRepository.updateVideoNSWF(
+  //     '67cf23c43ca933d5310b2605',
+  //     true,
+  //     'Drawing',
+  //   );
+  // }
 }

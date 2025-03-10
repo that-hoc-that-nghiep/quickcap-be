@@ -283,8 +283,8 @@ export class VideoController {
     }
   }
 
-  @Post('testtt/testt')
-  testt() {
-    return this.videoService.updateNswf();
-  }
+  // @Post('testtt/testt')
+  // testt() {
+  //   return this.videoService.updateNswf();
+  // }
 }
