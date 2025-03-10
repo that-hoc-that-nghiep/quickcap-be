@@ -1,4 +1,4 @@
 export class checkNsfwReq {
-  videoId: string;
   videoUrl: string;
+  videoId: string;
 }

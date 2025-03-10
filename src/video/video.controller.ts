@@ -283,7 +283,7 @@ export class VideoController {
     examples: {
       video_1: {
         value: {
-          videoUrl: 's3://quickcap-bucket-video/baigiangmontiengnhat.mp4',
+          videoUrl: 'bao2.mp4',
         },
       },
     },
@@ -291,6 +291,7 @@ export class VideoController {
   @ApiParam({
     name: 'orgId',
     type: 'string',
+    example: 'f8a709c8-5787-44fa-993e-21f3d5b46804',
   })
   test(
     @GetUser('id') userId: string,
@@ -299,24 +300,21 @@ export class VideoController {
   ) {
     return this.videoService.test(userId, orgId, testDto);
   }
-
-  @EventPattern('forward-video-data')
-  async processVideoData(@Payload() data: any) {
-    this.videoService.processVideoData(data);
-  }
-
-  @EventPattern('forward-check-nsfw')
-  async checkNsfw(@Payload() data: checkNsfwReq, @Ctx() context: any) {
-    this.videoService.checkNsfw(data.videoUrl, data.videoId);
-  }
-
   @EventPattern('nsfw-result')
   handleCheckNsfw(data: ResultNSFWRes) {
     try {
-      console.log('Received nsfw-result event. Data:', JSON.stringify(data));
-      // Xử lý việc kiểm tra video
+      this.logger.log(
+        'Received nsfw-result event. Data:',
+        JSON.stringify(data),
+      );
+      this.videoService.handleNsfw(data);
     } catch (error) {
       console.error('Error handling nsfw-result event:', error);
     }
+  }
+
+  @Post('testtt/testt')
+  testt() {
+    return this.videoService.updateNswf();
   }
 }
