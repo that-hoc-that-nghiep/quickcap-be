@@ -25,7 +25,6 @@ import {
 import { VideoService } from './video.service';
 import { ApiDocsPagination } from 'src/decorators/swagger-form-data.decorator';
 import { GetUser } from 'src/decorators/get-user.decorator';
-import { CreateVideoDto } from './dto/create-video.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { VideoType } from 'src/constants/video';
@@ -36,10 +35,8 @@ import { VideoResponseDto } from './dto/video-res.dto';
 import { VideosResponseDto } from './dto/videos-res.dto';
 import { TranferVideoDto } from './dto/tranfer-video.dto';
 import { TestDto } from './dto/test.dto';
-import { Ctx, EventPattern, Payload } from '@nestjs/microservices';
-import { ResultNSFWRes } from './dto/result-nswf.res';
-import { CheckNSFWRes } from './dto/test.res.dto';
-import { checkNsfwReq } from './dto/check-nswf.req';
+import { EventPattern } from '@nestjs/microservices';
+import { ResultNSFWRes } from './dto/result-nsfw.res';
 
 @ApiTags('Video')
 @ApiSecurity('token')

@@ -27,8 +27,8 @@ import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
 import { VideoDataRes } from './dto/video-data.res';
 import { TranscribeRes } from './dto/transcibe.res';
 import { convertS3Url } from 'src/utlis';
-import { ResultNSFWRes } from './dto/result-nswf.res';
-import { checkNsfwReq } from './dto/check-nswf.req';
+import { ResultNSFWRes } from './dto/result-nsfw.res';
+import { checkNsfwReq } from './dto/check-nsfw.req';
 import { firstValueFrom } from 'rxjs';
 
 interface VideoTemp {
@@ -337,17 +337,17 @@ export class VideoService {
   }
 
   async handleNsfw(data: ResultNSFWRes) {
-    this.logger.log(`Prossing handle nswf for videoId ${data.videoId}`);
+    this.logger.log(`Prossing handle nsfw for videoId ${data.videoId}`);
     if (data.isNSFW) {
       this.logger.log('Is nsfw', data.isNSFW);
       try {
         this.logger.log('Starting update nswf for video');
-        const video = await this.videoRepository.updateVideoNSWF(
+        const video = await this.videoRepository.updateVideoNSFW(
           data.videoId,
           data.isNSFW,
           data.dominantCategory,
         );
-        this.logger.log('Finished update nswf for video', video);
+        this.logger.log('Finished update nsfw for video', video);
       } catch (e) {
         this.logger.error('Error handleNsfw', e);
         throw new InternalServerErrorException(e);

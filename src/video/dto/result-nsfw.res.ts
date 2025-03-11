@@ -1,10 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { NSWFType } from 'src/constants/nswf';
+import { NSFWType } from 'src/constants/nsfw';
+
 
 export class ResultNSFWRes {
   videoId: string;
 
-  dominantCategory: NSWFType;
+  dominantCategory: NSFWType;
 
   categoryBreakdown: {
     Drawing: number;

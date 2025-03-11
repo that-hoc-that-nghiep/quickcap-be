@@ -8,7 +8,7 @@ import { Video } from './video.schema';
 import { Model } from 'mongoose';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
-import { NSWFType } from 'src/constants/nswf';
+
 
 @Injectable()
 export class VideoRepository {
@@ -170,13 +170,13 @@ export class VideoRepository {
     return updateVideo;
   }
 
-  async updateVideoNSWF(videoId: string, isNSWF: boolean, nswfType: string) {
+  async updateVideoNSFW(videoId: string, isNSFW: boolean, nsfwType: string) {
     const video = await this.videoModel.findById(videoId);
     if (!video) throw new NotFoundException(`Video id ${videoId} not found`);
     const updateVideo = await this.videoModel.findByIdAndUpdate(
       videoId,
       {
-        $set: { isNSWF, nswfType },
+        $set: { isNSFW, nsfwType },
       },
       {
         new: true,

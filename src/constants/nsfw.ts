@@ -1,4 +1,4 @@
-export enum NSWFType {
+export enum NSFWType {
   DRAWING = 'Drawing',
   HENTAI = 'Hentai',
   NEUTRAL = 'Neutral',
