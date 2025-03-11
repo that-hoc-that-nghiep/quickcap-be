@@ -20,3 +20,15 @@ export const EnvVariables: Record<string, string> = {
   MAILER_PASSWORD: 'MAILER_PASSWORD',
   AUTH_URL: 'AUTH_URL',
 };
+
+export enum VideoCategory {
+  DRAWING = 'Drawing',
+  HENTAI = 'Hentai',
+  NEUTRAL = 'Neutral',
+  PORN = 'Porn',
+  SEXY = 'Sexy',
+}
+
+export const QUEUE_NAME = 'quickcap';
+export const QUEUE_NAME_2 = 'quickcap-nsfw';
+export const SERVICE_NAME = 'quickcap-ai';

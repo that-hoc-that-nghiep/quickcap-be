@@ -9,6 +9,7 @@ import { Model } from 'mongoose';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 
+
 @Injectable()
 export class VideoRepository {
   constructor(@InjectModel(Video.name) private videoModel: Model<Video>) {}
@@ -19,7 +20,7 @@ export class VideoRepository {
     source: string,
     createVideoDto: CreateVideoDto,
   ): Promise<Video> {
-    const { title, description, summary, categoryId } = createVideoDto;
+    const { title, description, transcript, categoryId } = createVideoDto;
     console.log('data from create video dto', createVideoDto);
     const video = await this.videoModel.create({
       title,
@@ -27,7 +28,7 @@ export class VideoRepository {
       source,
       userId,
       orgId,
-      summary,
+      transcript,
       categoryId,
     });
     return video.populate('categoryId');
@@ -140,6 +141,42 @@ export class VideoRepository {
       videoId,
       {
         $addToSet: { orgId },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+    return updateVideo;
+  }
+
+  async removeVideoFromOrg(videoId: string, orgId: string) {
+    const video = await this.getVideoById(videoId);
+    if (!video.orgId.includes(orgId)) {
+      throw new BadRequestException(
+        `OrgId ${orgId} does not exist in videoId ${videoId}`,
+      );
+    }
+    const updateVideo = await this.videoModel.findByIdAndUpdate(
+      videoId,
+      {
+        $pull: { orgId: orgId },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+    return updateVideo;
+  }
+
+  async updateVideoNSFW(videoId: string, isNSFW: boolean, nsfwType: string) {
+    const video = await this.videoModel.findById(videoId);
+    if (!video) throw new NotFoundException(`Video id ${videoId} not found`);
+    const updateVideo = await this.videoModel.findByIdAndUpdate(
+      videoId,
+      {
+        $set: { isNSFW, nsfwType },
       },
       {
         new: true,

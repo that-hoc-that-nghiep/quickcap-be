@@ -6,6 +6,7 @@ import { Video, VideoSchema } from './video.schema';
 import { VideoRepository } from './video.repository';
 import { CategoryModule } from 'src/category/category.module';
 import { AuthModule } from 'src/auth/auth.module';
+import { RabbitmqModule } from 'src/rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AuthModule } from 'src/auth/auth.module';
     ]),
     CategoryModule,
     AuthModule,
+    RabbitmqModule,
   ],
   controllers: [VideoController],
   providers: [VideoService, VideoRepository],

@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   ParseIntPipe,
   Patch,
@@ -23,11 +24,8 @@ import {
 } from '@nestjs/swagger';
 import { VideoService } from './video.service';
 import { ApiDocsPagination } from 'src/decorators/swagger-form-data.decorator';
-
 import { GetUser } from 'src/decorators/get-user.decorator';
-import { CreateVideoDto } from './dto/create-video.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { SwaggerArrayConversion } from 'src/interceptors/swagger-array.interceptor';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { VideoType } from 'src/constants/video';
 import { OrgType } from 'src/constants/org';
@@ -36,13 +34,16 @@ import { Video } from './video.schema';
 import { VideoResponseDto } from './dto/video-res.dto';
 import { VideosResponseDto } from './dto/videos-res.dto';
 import { TranferVideoDto } from './dto/tranfer-video.dto';
+import { TestDto } from './dto/test.dto';
+import { EventPattern } from '@nestjs/microservices';
+import { ResultNSFWRes } from './dto/result-nsfw.res';
 
 @ApiTags('Video')
 @ApiSecurity('token')
 @Controller('video')
 export class VideoController {
   constructor(private videoService: VideoService) {}
-
+  private readonly logger = new Logger(VideoController.name);
   @Post()
   @ApiOperation({
     summary: 'Upload video',
@@ -53,32 +54,12 @@ export class VideoController {
     schema: {
       type: 'object',
       properties: {
-        title: {
-          type: 'string',
-          default: 'this is title',
-        },
-        description: {
-          type: 'string',
-          default: 'the action of providing or supplying something for use.',
-        },
-        summary: {
-          type: 'string',
-          default: 'this is summary',
-        },
-        'categoryId[]': {
-          type: 'array',
-          items: {
-            type: 'string',
-            default: '',
-          },
-          default: ['67a357027044f67fd112f501', '67a461334e30fba0ac5103f8'],
-        },
         file: {
           type: 'string',
           format: 'binary',
         },
       },
-      required: ['title', 'description', 'summary', 'file'],
+      required: ['file'],
     },
   })
   @UseInterceptors(
@@ -104,22 +85,12 @@ export class VideoController {
   })
   async uploadVideo(
     @GetUser() user: User,
-    @Body() createVideoDto: CreateVideoDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const remakeCreateVideoDto = {
-      ...createVideoDto,
-      categoryId: createVideoDto.categoryId[0].split(','),
-    };
     const orgId = user.organizations.find(
       (org) => org.type === OrgType.PERSONAL,
     ).id;
-    const res = await this.videoService.uploadVideo(
-      user.id,
-      orgId,
-      remakeCreateVideoDto,
-      file,
-    );
+    const res = await this.videoService.uploadVideo(user.id, orgId, file);
     return res;
   }
 
@@ -248,4 +219,69 @@ export class VideoController {
   deleteVideo(@Param('id') id: string) {
     return this.videoService.deleteVideo(id);
   }
+
+  @Delete(':id/:orgId')
+  @ApiOperation({ summary: 'Remove video from org' })
+  @ApiParam({
+    name: 'id',
+    type: 'string',
+  })
+  @ApiParam({
+    name: 'orgId',
+    type: 'string',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Video removed successfully',
+    type: VideoResponseDto,
+  })
+  removeVideoFromOrg(
+    @GetUser() user: User,
+    @Param('id') videoId: string,
+    @Param('orgId') orgId: string,
+  ) {
+    return this.videoService.removeVideoFromOrg(user, videoId, orgId);
+  }
+
+  @Post('test/:orgId')
+  @ApiOperation({ summary: 'Test' })
+  @ApiBody({
+    type: TestDto,
+    examples: {
+      video_1: {
+        value: {
+          videoUrl: 'bao2.mp4',
+        },
+      },
+    },
+  })
+  @ApiParam({
+    name: 'orgId',
+    type: 'string',
+    example: 'f8a709c8-5787-44fa-993e-21f3d5b46804',
+  })
+  test(
+    @GetUser('id') userId: string,
+    @Param('orgId') orgId: string,
+    @Body() testDto: TestDto,
+  ) {
+    return this.videoService.test(userId, orgId, testDto);
+  }
+  @EventPattern('nsfw-result')
+  handleCheckNsfw(data: ResultNSFWRes) {
+    try {
+      this.logger.log(
+        'Received nsfw-result event. Data:',
+        JSON.stringify(data),
+      );
+      this.videoService.handleNsfw(data);
+    } catch (error) {
+      console.error('Error handling nsfw-result event:', error);
+    }
+  }
+
+  // @Post('testtt/testt')
+  // testt() {
+  //   return this.videoService.updateNswf();
+  // }
 }

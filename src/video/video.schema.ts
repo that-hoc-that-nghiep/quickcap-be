@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { Category } from 'src/category/category.schema';
+import { NSFWType } from 'src/constants/nsfw';
 import { VideoType } from 'src/constants/video';
 
 export type TaskDocument = HydratedDocument<Video>;
@@ -50,7 +51,7 @@ export class Video {
 
   @ApiProperty()
   @Prop({ default: 'No summary' })
-  summary: string;
+  transcript: string;
 
   @ApiProperty()
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }])
@@ -59,5 +60,13 @@ export class Video {
   @ApiProperty()
   @Prop({ default: Date.now() })
   createdAt: Date;
+
+  @ApiProperty()
+  @Prop({ default: false })
+  isNSFW: boolean;
+
+  @ApiProperty()
+  @Prop({ default: NSFWType.NEUTRAL, enum: NSFWType })
+  nsfwType: NSFWType;
 }
 export const VideoSchema = SchemaFactory.createForClass(Video);

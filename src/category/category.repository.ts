@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Category } from './category.schema';
 import { Model } from 'mongoose';
@@ -11,7 +11,7 @@ export class CategoryRepository {
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Video.name) private videoModel: Model<Video>,
   ) {}
-
+  logger = new Logger(CategoryRepository.name);
   async createCatogory(
     createCatogoryDto: CreateCategoryDto,
   ): Promise<Category> {
@@ -51,5 +51,14 @@ export class CategoryRepository {
   async getCategoryByArrayId(ids: string[]): Promise<Category[]> {
     const categories = this.categoryModel.find({ _id: { $in: ids } });
     return categories;
+  }
+
+  async getCategoryByName(name: string) {
+    const category = await this.categoryModel.findOne({ name }).exec();
+    if (!category) {
+      this.logger.error(`Not found categoryName ${name}`);
+      throw new NotFoundException(`Not found categoryName ${name}`);
+    }
+    return category;
   }
 }
