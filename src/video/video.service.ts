@@ -26,7 +26,7 @@ import { TestDto } from './dto/test.dto';
 import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
 import { VideoDataRes } from './dto/video-data.res';
 import { TranscribeRes } from './dto/transcibe.res';
-import { convertS3Url } from 'src/utlis';
+import { convertS3Url, extractS3Path } from 'src/utlis';
 import { ResultNSFWRes } from './dto/result-nsfw.res';
 import { checkNsfwReq } from './dto/check-nsfw.req';
 import { firstValueFrom } from 'rxjs';
@@ -39,7 +39,6 @@ interface VideoTemp {
   description: string;
   transcript: string;
   categoryId: string[];
-  s3Url: string;
 }
 @Injectable()
 export class VideoService {
@@ -77,7 +76,7 @@ export class VideoService {
     const fileStatus = await this.s3.send(command);
     if (fileStatus.$metadata.httpStatusCode === 200) {
       this.logger.log(`File uploaded s3 successfully ${Key}`);
-      return await this.transcriptAndProcess(userId, orgId, Key);
+      return await this.transcribeVideo(userId, orgId, Key);
     }
   }
 
@@ -217,47 +216,47 @@ export class VideoService {
     };
   }
 
-  async test(userId: string, orgId: string, testDto: TestDto) {
-    const { videoUrl } = testDto;
-    return await this.transcriptAndProcess(userId, orgId, videoUrl);
+  // async test(userId: string, orgId: string, testDto: TestDto) {
+  //   const { videoUrl } = testDto;
+  //   return await this.transcriptAndProcess(userId, orgId, videoUrl);
+  // }
+
+  async transcribeVideo(userId: string, orgId: string, videoUrl: string) {
+    const s3Url = convertS3Url(videoUrl);
+    this.logger.log(`Starting transcrip video for: ${s3Url}`);
+    try {
+      await this.rabbitmqService.ensureConnection();
+      this.rabbitmqService.emitEvent('transcribe', {
+        userId,
+        orgId,
+        videoUrl: s3Url,
+      });
+    } catch (error) {
+      this.logger.error(`Error in transcript and process:`, error);
+      throw new InternalServerErrorException('Error transcript video');
+    }
   }
 
-  async transcriptAndProcess(userId: string, orgId: string, videoUrl: string) {
+  async processVideoData(
+    userId: string,
+    orgId: string,
+    videoUrl: string,
+    transcript: string,
+  ) {
     let video: VideoTemp = {
       source: videoUrl,
       userId,
       orgId,
       title: '',
       description: '',
-      transcript: '',
+      transcript: transcript,
       categoryId: [],
-      s3Url: '',
     };
 
-    const s3Url = convertS3Url(videoUrl);
-    this.logger.log(`Starting video processing for: ${s3Url}`);
-    video.s3Url = s3Url;
+    this.logger.log(`Starting video processing for: ${video.source}`);
 
     try {
       await this.rabbitmqService.ensureConnection();
-      const transcribeResponse = (await firstValueFrom(
-        this.rabbitmqService.sendMessage<TranscribeRes>(
-          { cmd: 'transcribe' },
-          { videoUrl: s3Url },
-        ),
-      )) as TranscribeRes;
-
-      this.logger.log(`Transcription response:`, transcribeResponse);
-
-      if (!transcribeResponse.transcript) {
-        this.logger.error('Unable to receive transcript, stopping processing.');
-        throw new InternalServerErrorException(
-          'Unable to receive transcript, stopping processing.',
-        );
-      }
-
-      video.transcript = transcribeResponse.transcript;
-
       const categories = await this.categoryRepository.getCategories();
       const categoryNames = categories.map((category) => category.name);
 
@@ -265,7 +264,7 @@ export class VideoService {
         this.rabbitmqService.sendMessage<VideoDataRes>(
           { cmd: 'video-data' },
           {
-            transcript: transcribeResponse.transcript,
+            transcript: video.transcript,
             categories: categoryNames,
           },
         ),
@@ -297,7 +296,7 @@ export class VideoService {
       this.logger.log('Saved video', savedVideo);
       this.logger.log('Starting nsfw check');
       this.rabbitmqService.emitEvent('check-nsfw', {
-        videoUrl: video.s3Url,
+        videoUrl: video.source,
         videoId: savedVideo._id,
       });
       this.logger.log('Finished nsfw check');
@@ -312,11 +311,13 @@ export class VideoService {
   }
 
   async saveNewVideo(video: VideoTemp) {
+    const reSource = extractS3Path(video.source);
+    this.logger.log(`Re source: ${reSource}`);
     try {
       const newVideo = await this.videoRepository.createVideo(
         video.userId,
         video.orgId,
-        video.source,
+        reSource,
         {
           title: video.title,
           description: video.description,
@@ -325,10 +326,6 @@ export class VideoService {
         },
       );
       this.logger.log('Create video', newVideo);
-      this.rabbitmqService.emitEvent('check-nsfw', {
-        videoUrl: video.s3Url,
-        videoId: newVideo._id,
-      });
       return newVideo;
     } catch (e) {
       this.logger.error('Save new Video error');
@@ -338,30 +335,18 @@ export class VideoService {
 
   async handleNsfw(data: ResultNSFWRes) {
     this.logger.log(`Prossing handle nsfw for videoId ${data.videoId}`);
-    if (data.isNSFW) {
-      this.logger.log('Is nsfw', data.isNSFW);
-      try {
-        this.logger.log('Starting update nswf for video');
-        const video = await this.videoRepository.updateVideoNSFW(
-          data.videoId,
-          data.isNSFW,
-          data.dominantCategory,
-        );
-        this.logger.log('Finished update nsfw for video', video);
-      } catch (e) {
-        this.logger.error('Error handleNsfw', e);
-        throw new InternalServerErrorException(e);
-      }
-    } else {
-      this.logger.log(`VideoId ${data.videoId} isNSFW is false`);
+    this.logger.log('Is nsfw', data.isNSFW);
+    try {
+      this.logger.log('Starting update nswf for video');
+      const video = await this.videoRepository.updateVideoNSFW(
+        data.videoId,
+        data.isNSFW,
+        data.dominantCategory,
+      );
+      this.logger.log('Finished update nsfw for video', video);
+    } catch (e) {
+      this.logger.error('Error handleNsfw', e);
+      throw new InternalServerErrorException(e);
     }
   }
-
-  // async updateNswf() {
-  //   return this.videoRepository.updateVideoNSWF(
-  //     '67cf23c43ca933d5310b2605',
-  //     true,
-  //     'Drawing',
-  //   );
-  // }
 }

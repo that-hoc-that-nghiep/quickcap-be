@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  InternalServerErrorException,
   Logger,
   Param,
   ParseIntPipe,
@@ -34,15 +35,19 @@ import { Video } from './video.schema';
 import { VideoResponseDto } from './dto/video-res.dto';
 import { VideosResponseDto } from './dto/videos-res.dto';
 import { TranferVideoDto } from './dto/tranfer-video.dto';
-import { TestDto } from './dto/test.dto';
 import { EventPattern } from '@nestjs/microservices';
 import { ResultNSFWRes } from './dto/result-nsfw.res';
+import { TranscribeRes } from './dto/transcibe.res';
+import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
 
 @ApiTags('Video')
 @ApiSecurity('token')
 @Controller('video')
 export class VideoController {
-  constructor(private videoService: VideoService) {}
+  constructor(
+    private readonly rabbitmqService: RabbitmqService,
+    private videoService: VideoService,
+  ) {}
   private readonly logger = new Logger(VideoController.name);
   @Post()
   @ApiOperation({
@@ -90,6 +95,7 @@ export class VideoController {
     const orgId = user.organizations.find(
       (org) => org.type === OrgType.PERSONAL,
     ).id;
+
     const res = await this.videoService.uploadVideo(user.id, orgId, file);
     return res;
   }
@@ -243,30 +249,53 @@ export class VideoController {
     return this.videoService.removeVideoFromOrg(user, videoId, orgId);
   }
 
-  @Post('test/:orgId')
-  @ApiOperation({ summary: 'Test' })
-  @ApiBody({
-    type: TestDto,
-    examples: {
-      video_1: {
-        value: {
-          videoUrl: 'bao2.mp4',
-        },
-      },
-    },
-  })
-  @ApiParam({
-    name: 'orgId',
-    type: 'string',
-    example: 'f8a709c8-5787-44fa-993e-21f3d5b46804',
-  })
-  test(
-    @GetUser('id') userId: string,
-    @Param('orgId') orgId: string,
-    @Body() testDto: TestDto,
-  ) {
-    return this.videoService.test(userId, orgId, testDto);
+  // @Post('test/:orgId')
+  // @ApiOperation({ summary: 'Test' })
+  // @ApiBody({
+  //   type: TestDto,
+  //   examples: {
+  //     video_1: {
+  //       value: {
+  //         videoUrl: 'bao2.mp4',
+  //       },
+  //     },
+  //   },
+  // })
+  // @ApiParam({
+  //   name: 'orgId',
+  //   type: 'string',
+  //   example: 'f8a709c8-5787-44fa-993e-21f3d5b46804',
+  // })
+  // test(
+  //   @GetUser('id') userId: string,
+  //   @Param('orgId') orgId: string,
+  //   @Body() testDto: TestDto,
+  // ) {
+  //   return this.videoService.test(userId, orgId, testDto);
+  // }
+
+  @EventPattern('transcribe-result')
+  async handleProcessVideoData(data: TranscribeRes) {
+    try {
+      await this.rabbitmqService.ensureConnection();
+      if (!data.transcript) {
+        this.logger.error('Unable to receive transcript, stopping processing.');
+        throw new InternalServerErrorException(
+          'Unable to receive transcript, stopping processing.',
+        );
+      }
+      await this.videoService.processVideoData(
+        data.userId,
+        data.orgId,
+        data.videoUrl,
+        data.transcript,
+      );
+    } catch (error) {
+      this.logger.error(`Error process video data:`, error);
+      throw new InternalServerErrorException('Error video data');
+    }
   }
+
   @EventPattern('nsfw-result')
   handleCheckNsfw(data: ResultNSFWRes) {
     try {
@@ -276,6 +305,7 @@ export class VideoController {
       );
       this.videoService.handleNsfw(data);
     } catch (error) {
+      this.logger.error('Error handling nsfw-result event');
       console.error('Error handling nsfw-result event:', error);
     }
   }
