@@ -257,7 +257,7 @@ export class VideoService {
 
     try {
       await this.rabbitmqService.ensureConnection();
-      const categories = await this.categoryRepository.getCategories();
+      const categories = await this.categoryRepository.getCategories(orgId);
       const categoryNames = categories.map((category) => category.name);
 
       const videoDataResponse = (await firstValueFrom(
@@ -280,9 +280,10 @@ export class VideoService {
 
       if (videoDataResponse.isNewCategory) {
         this.logger.log('Is new category');
-        const newCategory = await this.categoryRepository.createCatogory({
-          name: videoDataResponse.category,
-        });
+        const newCategory = await this.categoryRepository.createCatogory(
+          video.orgId,
+          videoDataResponse.category,
+        );
         video.categoryId.push(newCategory._id);
       } else {
         this.logger.log('Is not new category');
