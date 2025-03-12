@@ -1,12 +1,11 @@
 import { ArgumentsHost, Catch, ExceptionFilter, Logger } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
-
-@Catch()
+@Catch(RpcException)
 export class RabbitMQExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(RabbitMQExceptionFilter.name);
 
-  catch(exception: any, host: ArgumentsHost): Observable<any> {
+  catch(exception: RpcException, host: ArgumentsHost): Observable<any> {
     const errorMessage = exception?.message || 'Unknown error';
 
     if (
