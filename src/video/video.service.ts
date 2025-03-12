@@ -77,7 +77,7 @@ export class VideoService {
     const fileStatus = await this.s3.send(command);
     if (fileStatus.$metadata.httpStatusCode === 200) {
       this.logger.log(`File uploaded s3 successfully ${Key}`);
-      return await this.transcriptAndProcess(userId, orgId, Key);
+      return await this.transcribeVideo(userId, orgId, Key);
     }
   }
 
@@ -217,19 +217,40 @@ export class VideoService {
     };
   }
 
-  async test(userId: string, orgId: string, testDto: TestDto) {
-    const { videoUrl } = testDto;
-    return await this.transcriptAndProcess(userId, orgId, videoUrl);
+  // async test(userId: string, orgId: string, testDto: TestDto) {
+  //   const { videoUrl } = testDto;
+  //   return await this.transcriptAndProcess(userId, orgId, videoUrl);
+  // }
+
+  async transcribeVideo(userId: string, orgId: string, videoUrl: string) {
+    const s3Url = convertS3Url(videoUrl);
+    this.logger.log(`Starting transcrip video for: ${s3Url}`);
+    try {
+      await this.rabbitmqService.ensureConnection();
+      this.rabbitmqService.emitEvent('transcribe', {
+        userId,
+        orgId,
+        videoUrl: s3Url,
+      });
+    } catch (error) {
+      this.logger.error(`Error in transcript and process:`, error);
+      throw new InternalServerErrorException('Error transcript video');
+    }
   }
 
-  async transcriptAndProcess(userId: string, orgId: string, videoUrl: string) {
+  async processVideoData(
+    userId: string,
+    orgId: string,
+    videoUrl: string,
+    transcript: string,
+  ) {
     let video: VideoTemp = {
       source: videoUrl,
       userId,
       orgId,
       title: '',
       description: '',
-      transcript: '',
+      transcript: transcript,
       categoryId: [],
       s3Url: '',
     };
@@ -240,24 +261,6 @@ export class VideoService {
 
     try {
       await this.rabbitmqService.ensureConnection();
-      const transcribeResponse = (await firstValueFrom(
-        this.rabbitmqService.sendMessage<TranscribeRes>(
-          { cmd: 'transcribe' },
-          { videoUrl: s3Url },
-        ),
-      )) as TranscribeRes;
-
-      this.logger.log(`Transcription response:`, transcribeResponse);
-
-      if (!transcribeResponse.transcript) {
-        this.logger.error('Unable to receive transcript, stopping processing.');
-        throw new InternalServerErrorException(
-          'Unable to receive transcript, stopping processing.',
-        );
-      }
-
-      video.transcript = transcribeResponse.transcript;
-
       const categories = await this.categoryRepository.getCategories();
       const categoryNames = categories.map((category) => category.name);
 
@@ -265,7 +268,7 @@ export class VideoService {
         this.rabbitmqService.sendMessage<VideoDataRes>(
           { cmd: 'video-data' },
           {
-            transcript: transcribeResponse.transcript,
+            transcript: video.transcript,
             categories: categoryNames,
           },
         ),
