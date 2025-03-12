@@ -9,7 +9,6 @@ import { Model } from 'mongoose';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 
-
 @Injectable()
 export class VideoRepository {
   constructor(@InjectModel(Video.name) private videoModel: Model<Video>) {}
@@ -57,6 +56,7 @@ export class VideoRepository {
     const skip = (page - 1) * limit;
     const videos = await this.videoModel
       .find(filter)
+      .sort({ _id: -1 })
       .skip(skip)
       .limit(limit)
       .populate('categoryId')
