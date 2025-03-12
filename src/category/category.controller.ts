@@ -44,7 +44,7 @@ export class CategoryController {
     @Param('orgId') orgId: string,
     @Body() createCategoryDto: CreateCategoryDto,
   ) {
-    return this.categoryService.createCategory(orgId,createCategoryDto);
+    return this.categoryService.createCategory(orgId, createCategoryDto);
   }
 
   @ApiOperation({ summary: 'Get a category by id' })
@@ -59,14 +59,15 @@ export class CategoryController {
   }
 
   @ApiOperation({ summary: 'Get all categories' })
-  @Get()
+  @Get('all/:orgId')
   @ApiResponse({
     status: 200,
     description: 'The categories have been successfully fetched.',
     type: CategoriesResponseDto,
   })
-  getCategories() {
-    return this.categoryService.getCategories();
+  @ApiParam({ name: 'orgId', type: 'string' })
+  getCategories(@Param('orgId') orgId: string) {
+    return this.categoryService.getCategories(orgId);
   }
 
   @ApiOperation({ summary: 'Delete a category by id' })

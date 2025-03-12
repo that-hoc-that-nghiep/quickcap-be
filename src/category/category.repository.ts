@@ -12,17 +12,13 @@ export class CategoryRepository {
     @InjectModel(Video.name) private videoModel: Model<Video>,
   ) {}
   logger = new Logger(CategoryRepository.name);
-  async createCatogory(
-    orgId: string,
-    createCatogoryDto: CreateCategoryDto,
-  ): Promise<Category> {
-    const { name } = createCatogoryDto;
+  async createCatogory(orgId: string, name: string): Promise<Category> {
     const newCategory = await this.categoryModel.create({ name, orgId });
     return newCategory;
   }
 
-  async getCategories(): Promise<Category[]> {
-    const categories = await this.categoryModel.find().exec();
+  async getCategories(orgId: string): Promise<Category[]> {
+    const categories = await this.categoryModel.find({ orgId }).exec();
     return categories;
   }
 
