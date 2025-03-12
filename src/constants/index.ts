@@ -29,6 +29,6 @@ export enum VideoCategory {
   SEXY = 'Sexy',
 }
 
-export const QUEUE_NAME = 'quickcap-ai';
-export const QUEUE_NAME_2 = 'quickcap-nsfw-test';
+export const QUEUE_NAME = 'quickcap';
+export const QUEUE_NAME_2 = 'quickcap-nsfw';
 export const SERVICE_NAME = 'quickcap-ai';
