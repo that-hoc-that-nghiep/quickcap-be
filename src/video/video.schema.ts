@@ -50,11 +50,14 @@ export class Video {
   type: VideoType;
 
   @ApiProperty()
-  @Prop({ default: 'No summary' })
+  @Prop({ default: '' })
   transcript: string;
 
   @ApiProperty()
-  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }])
+  @Prop([
+    { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
+    { default: [] },
+  ])
   categoryId: Category[];
 
   @ApiProperty()

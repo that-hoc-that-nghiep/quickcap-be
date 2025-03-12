@@ -333,6 +333,31 @@ export class VideoService {
     }
   }
 
+  async saveNewVideoWithouttranscript(
+    userId: string,
+    orgId: string,
+    videoUrl: string,
+  ) {
+    const reSource = extractS3Path(videoUrl);
+    this.logger.log(`Re source: ${reSource}`);
+    try {
+      const newVideo = await this.videoRepository.createVideoWithoutTranscript(
+        userId,
+        orgId,
+        reSource,
+      );
+      this.logger.log('Create video', newVideo);
+      this.rabbitmqService.emitEvent('check-nsfw', {
+        videoUrl: videoUrl,
+        videoId: newVideo._id,
+      });
+      return newVideo;
+    } catch (e) {
+      this.logger.error('Save new Video error');
+      throw new InternalServerErrorException('Error saveNewVideo');
+    }
+  }
+
   async handleNsfw(data: ResultNSFWRes) {
     this.logger.log(`Prossing handle nsfw for videoId ${data.videoId}`);
     this.logger.log('Is nsfw', data.isNSFW);

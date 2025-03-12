@@ -32,6 +32,18 @@ export class VideoRepository {
     });
     return video.populate('categoryId');
   }
+  async createVideoWithoutTranscript(
+    userId: string,
+    orgId: string,
+    source: string,
+  ): Promise<Video> {
+    const video = await this.videoModel.create({
+      source,
+      userId,
+      orgId,
+    });
+    return video;
+  }
 
   async getAllVideos(
     orgId: string,
