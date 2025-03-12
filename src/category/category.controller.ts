@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import {
   ApiBody,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiSecurity,
   ApiTags,
@@ -16,7 +17,7 @@ import { CategoriesResponseDto } from './dto/categories-res.dto';
 @Controller('category')
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
-  @Post()
+  @Post(':orgId')
   @ApiOperation({ summary: 'Create a new category' })
   @ApiBody({
     type: CreateCategoryDto,
@@ -38,8 +39,12 @@ export class CategoryController {
     description: 'The category has been successfully created.',
     type: CategoryResponseDto,
   })
-  createCategory(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoryService.createCategory(createCategoryDto);
+  @ApiParam({ name: 'orgId', type: 'string' })
+  createCategory(
+    @Param('orgId') orgId: string,
+    @Body() createCategoryDto: CreateCategoryDto,
+  ) {
+    return this.categoryService.createCategory(orgId,createCategoryDto);
   }
 
   @ApiOperation({ summary: 'Get a category by id' })

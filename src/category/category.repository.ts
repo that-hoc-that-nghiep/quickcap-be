@@ -13,10 +13,11 @@ export class CategoryRepository {
   ) {}
   logger = new Logger(CategoryRepository.name);
   async createCatogory(
+    orgId: string,
     createCatogoryDto: CreateCategoryDto,
   ): Promise<Category> {
     const { name } = createCatogoryDto;
-    const newCategory = await this.categoryModel.create({ name });
+    const newCategory = await this.categoryModel.create({ name, orgId });
     return newCategory;
   }
 

@@ -15,10 +15,10 @@ export class CategoryService {
     const category = await this.categoryRepository.getCategoryByID(id);
     return { data: category, message: 'Category fetched successfully' };
   }
-  
-  async createCategory(createCategoryDto: CreateCategoryDto) {
+
+  async createCategory(orgId: string, createCategoryDto: CreateCategoryDto) {
     const category =
-      await this.categoryRepository.createCatogory(createCategoryDto);
+      await this.categoryRepository.createCatogory(orgId, createCategoryDto);
     return { data: category, message: 'Category created successfully' };
   }
 
