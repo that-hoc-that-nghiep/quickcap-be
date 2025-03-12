@@ -95,6 +95,7 @@ export class VideoController {
     const orgId = user.organizations.find(
       (org) => org.type === OrgType.PERSONAL,
     ).id;
+
     const res = await this.videoService.uploadVideo(user.id, orgId, file);
     return res;
   }

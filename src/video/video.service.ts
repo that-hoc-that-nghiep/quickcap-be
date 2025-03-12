@@ -26,7 +26,7 @@ import { TestDto } from './dto/test.dto';
 import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
 import { VideoDataRes } from './dto/video-data.res';
 import { TranscribeRes } from './dto/transcibe.res';
-import { convertS3Url } from 'src/utlis';
+import { convertS3Url, extractS3Path } from 'src/utlis';
 import { ResultNSFWRes } from './dto/result-nsfw.res';
 import { checkNsfwReq } from './dto/check-nsfw.req';
 import { firstValueFrom } from 'rxjs';
@@ -39,7 +39,6 @@ interface VideoTemp {
   description: string;
   transcript: string;
   categoryId: string[];
-  s3Url: string;
 }
 @Injectable()
 export class VideoService {
@@ -252,12 +251,9 @@ export class VideoService {
       description: '',
       transcript: transcript,
       categoryId: [],
-      s3Url: '',
     };
 
-    const s3Url = convertS3Url(videoUrl);
-    this.logger.log(`Starting video processing for: ${s3Url}`);
-    video.s3Url = s3Url;
+    this.logger.log(`Starting video processing for: ${video.source}`);
 
     try {
       await this.rabbitmqService.ensureConnection();
@@ -300,7 +296,7 @@ export class VideoService {
       this.logger.log('Saved video', savedVideo);
       this.logger.log('Starting nsfw check');
       this.rabbitmqService.emitEvent('check-nsfw', {
-        videoUrl: video.s3Url,
+        videoUrl: video.source,
         videoId: savedVideo._id,
       });
       this.logger.log('Finished nsfw check');
@@ -315,11 +311,13 @@ export class VideoService {
   }
 
   async saveNewVideo(video: VideoTemp) {
+    const reSource = extractS3Path(video.source);
+    this.logger.log(`Re source: ${reSource}`);
     try {
       const newVideo = await this.videoRepository.createVideo(
         video.userId,
         video.orgId,
-        video.source,
+        reSource,
         {
           title: video.title,
           description: video.description,
@@ -328,10 +326,6 @@ export class VideoService {
         },
       );
       this.logger.log('Create video', newVideo);
-      this.rabbitmqService.emitEvent('check-nsfw', {
-        videoUrl: video.s3Url,
-        videoId: newVideo._id,
-      });
       return newVideo;
     } catch (e) {
       this.logger.error('Save new Video error');
@@ -341,30 +335,18 @@ export class VideoService {
 
   async handleNsfw(data: ResultNSFWRes) {
     this.logger.log(`Prossing handle nsfw for videoId ${data.videoId}`);
-    if (data.isNSFW) {
-      this.logger.log('Is nsfw', data.isNSFW);
-      try {
-        this.logger.log('Starting update nswf for video');
-        const video = await this.videoRepository.updateVideoNSFW(
-          data.videoId,
-          data.isNSFW,
-          data.dominantCategory,
-        );
-        this.logger.log('Finished update nsfw for video', video);
-      } catch (e) {
-        this.logger.error('Error handleNsfw', e);
-        throw new InternalServerErrorException(e);
-      }
-    } else {
-      this.logger.log(`VideoId ${data.videoId} isNSFW is false`);
+    this.logger.log('Is nsfw', data.isNSFW);
+    try {
+      this.logger.log('Starting update nswf for video');
+      const video = await this.videoRepository.updateVideoNSFW(
+        data.videoId,
+        data.isNSFW,
+        data.dominantCategory,
+      );
+      this.logger.log('Finished update nsfw for video', video);
+    } catch (e) {
+      this.logger.error('Error handleNsfw', e);
+      throw new InternalServerErrorException(e);
     }
   }
-
-  // async updateNswf() {
-  //   return this.videoRepository.updateVideoNSWF(
-  //     '67cf23c43ca933d5310b2605',
-  //     true,
-  //     'Drawing',
-  //   );
-  // }
 }
