@@ -46,11 +46,11 @@ export class VideoRepository {
     const filter: Record<string, any> = {
       orgId: { $in: [orgId] },
     };
-    if (keyword) {
+    if (keyword && keyword.trim() !== '') {
       filter.title = { $regex: keyword, $options: 'i' };
     }
 
-    if (categoryId) {
+    if (categoryId && categoryId.trim() !== '') {
       filter.categoryId = { $in: [categoryId] };
     }
     const skip = (page - 1) * limit;
