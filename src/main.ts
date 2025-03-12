@@ -17,17 +17,6 @@ async function bootstrap() {
   });
   const configService = app.get(ConfigService);
   app.enableCors({ origin: '*' });
-  const rmqUrl = configService.get('RABBITMQ_URL') || 'amqp://localhost:5672';
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [rmqUrl],
-      queue: QUEUE_NAME_2,
-      queueOptions: {
-        durable: true,
-      },
-    },
-  });
   app.setGlobalPrefix('api/v1');
   const config = new DocumentBuilder()
     .setTitle('Quickcap Project')
@@ -48,6 +37,17 @@ async function bootstrap() {
   );
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalInterceptors(app.get(CacheInterceptor));
+  const rmqUrl = configService.get('RABBITMQ_URL') || 'amqp://localhost:5672';
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [rmqUrl],
+      queue: QUEUE_NAME_2,
+      queueOptions: {
+        durable: true,
+      },
+    },
+  });
   await app.startAllMicroservices();
   await app.listen(configService.get<number>(EnvVariables.PORT) ?? 8080);
 }
