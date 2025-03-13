@@ -17,7 +17,7 @@ export class ConversationService {
     const transcript = (await this.videoRepository.getVideoById(videoId))
       .transcript;
     const conversation =
-      await this.conversationRepository.getConversations(userId);
+      await this.conversationRepository.getConversations(userId,videoId);
 
     const response = await firstValueFrom(
       this.client.send(
@@ -42,9 +42,11 @@ export class ConversationService {
     };
   }
 
-  async getConversations(userId: string) {
-    const conversations =
-      await this.conversationRepository.getConversations(userId);
+  async getConversations(userId: string, videoId: string) {
+    const conversations = await this.conversationRepository.getConversations(
+      userId,
+      videoId,
+    );
     return {
       data: conversations,
       message: 'Conversations fetched successfully',

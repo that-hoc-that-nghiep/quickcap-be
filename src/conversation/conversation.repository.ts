@@ -34,9 +34,10 @@ export class ConversationRepository {
     return newConversation;
   }
 
-  async getConversations(userId: string) {
+  async getConversations(userId: string, videoId: string) {
     const conversations = await this.conversationModel.find({
       userId: userId,
+      videoId: videoId,
     });
     return conversations;
   }
