@@ -25,7 +25,7 @@ export class ConversationRepository {
         userId: userId,
       },
       {
-        role: RoleChat.BOT,
+        role: RoleChat.AI,
         content: contentAi,
         videoId: videoId,
         userId: userId,
@@ -34,9 +34,10 @@ export class ConversationRepository {
     return newConversation;
   }
 
-  async getConversations(userId: string) {
+  async getConversations(userId: string, videoId: string) {
     const conversations = await this.conversationModel.find({
       userId: userId,
+      videoId: videoId,
     });
     return conversations;
   }
