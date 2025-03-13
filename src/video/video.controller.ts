@@ -154,13 +154,13 @@ export class VideoController {
   }
 
   @Patch('tranfer')
-  @ApiOperation({ summary: 'Tranfer location video to another organization' })
+  @ApiOperation({ summary: 'Add location video to another organization' })
   @ApiBody({
     type: TranferVideoDto,
   })
   @ApiResponse({
     status: 200,
-    description: 'Video tranfer successfully',
+    description: 'Add video to org successfully',
     type: VideoResponseDto,
   })
   async tranferVideo(
