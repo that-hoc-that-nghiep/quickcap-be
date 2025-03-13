@@ -64,12 +64,16 @@ export class Video {
   @Prop({ default: Date.now() })
   createdAt: Date;
 
-  @ApiProperty()
+  @ApiProperty({ type: 'boolean', default: false })
   @Prop({ default: false })
   isNSFW: boolean;
 
-  @ApiProperty()
+  @ApiProperty({ default: NSFWType.NEUTRAL, enum: NSFWType })
   @Prop({ default: NSFWType.NEUTRAL, enum: NSFWType })
   nsfwType: NSFWType;
+
+  @ApiProperty({ type: 'boolean', default: false })
+  @Prop({ default: false })
+  isDeleted: boolean;
 }
 export const VideoSchema = SchemaFactory.createForClass(Video);

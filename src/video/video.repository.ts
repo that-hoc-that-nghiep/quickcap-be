@@ -99,7 +99,17 @@ export class VideoRepository {
   }
 
   async deleteVideo(id: string) {
-    const video = await this.videoModel.findByIdAndDelete(id).exec();
+    const video = await this.videoModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: { isDeleted: true },
+        },
+        {
+          new: true,
+        },
+      )
+      .exec();
     if (!video) throw new NotFoundException(`Video id ${id} not found`);
     return video;
   }

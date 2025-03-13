@@ -11,6 +11,7 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { CategoryService } from './category.service';
 import { CategoryResponseDto } from './dto/category-res.dto';
 import { CategoriesResponseDto } from './dto/categories-res.dto';
+import { GetUser } from 'src/decorators/get-user.decorator';
 
 @ApiTags('Category')
 @ApiSecurity('token')

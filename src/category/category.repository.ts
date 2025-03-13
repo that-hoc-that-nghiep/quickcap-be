@@ -29,7 +29,15 @@ export class CategoryRepository {
   }
 
   async deleteCategory(id: string): Promise<Category> {
-    const category = await this.categoryModel.findByIdAndDelete(id).exec();
+    const category = await this.categoryModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: { isDeleted: true },
+        },
+        { new: true },
+      )
+      .exec();
     if (!category) throw new NotFoundException(`Category id ${id} not found`);
     const videos = await this.videoModel.find({ categoryId: id }).exec();
     if (videos.length > 0) {
