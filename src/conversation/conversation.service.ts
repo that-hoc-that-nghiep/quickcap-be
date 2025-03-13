@@ -3,6 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 
 import { VideoRepository } from 'src/video/video.repository';
 import { ConversationRepository } from './conversation.repository';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class ConversationService {
@@ -18,28 +19,27 @@ export class ConversationService {
     const conversation =
       await this.conversationRepository.getConversations(userId);
 
-    this.client
-      .send(
+    const response = await firstValueFrom(
+      this.client.send(
         { cmd: 'chat' },
         {
           question,
           conversation,
           transcript,
         },
-      )
-      .subscribe(async (response) => {
-        const neWconversation =
-          await this.conversationRepository.createConversation(
-            userId,
-            videoId,
-            question,
-            response.content,
-          );
-        return {
-          data: neWconversation,
-          message: 'Conversation created successfully',
-        };
-      });
+      ),
+    );
+    const neWconversation =
+      await this.conversationRepository.createConversation(
+        userId,
+        videoId,
+        question,
+        response.response,
+      );
+    return {
+      data: neWconversation,
+      message: 'Conversation created successfully',
+    };
   }
 
   async getConversations(userId: string) {
