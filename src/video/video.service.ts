@@ -265,6 +265,17 @@ export class VideoService {
         ),
       )) as TranscribeRes;
 
+      if (!transcribeResponse.transcript) {
+        const newVideo = await this.saveNewVideoWithouttranscript(
+          userId,
+          orgId,
+          videoUrl,
+        );
+        return {
+          data: newVideo,
+          message: 'Video processed and saved successfully',
+        };
+      }
       video.transcript = transcribeResponse.transcript;
 
       const categories = await this.categoryRepository.getCategories(orgId);
@@ -349,17 +360,16 @@ export class VideoService {
     orgId: string,
     videoUrl: string,
   ) {
-    const reSource = extractS3Path(videoUrl);
-    this.logger.log(`Re source: ${reSource}`);
     try {
+      const s3Url = convertS3Url(videoUrl);
       const newVideo = await this.videoRepository.createVideoWithoutTranscript(
         userId,
         orgId,
-        reSource,
+        videoUrl,
       );
       this.logger.log('Create video', newVideo);
       this.rabbitmqService.emitEvent('check-nsfw', {
-        videoUrl: videoUrl,
+        videoUrl: s3Url,
         videoId: newVideo._id,
       });
       return newVideo;
