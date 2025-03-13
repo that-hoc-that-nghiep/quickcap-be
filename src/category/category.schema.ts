@@ -15,6 +15,10 @@ export class Category {
   @ApiProperty()
   @Prop({ required: true })
   orgId: string;
+
+  @ApiProperty()
+  @Prop({ default: false })
+  isDeleted: boolean;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);
