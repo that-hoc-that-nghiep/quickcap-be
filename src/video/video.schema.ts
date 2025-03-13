@@ -71,5 +71,9 @@ export class Video {
   @ApiProperty()
   @Prop({ default: NSFWType.NEUTRAL, enum: NSFWType })
   nsfwType: NSFWType;
+
+  @ApiProperty({ type: 'boolean', default: false })
+  @Prop({ default: false })
+  isDeleted: boolean;
 }
 export const VideoSchema = SchemaFactory.createForClass(Video);

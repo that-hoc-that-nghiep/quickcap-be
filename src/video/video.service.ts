@@ -180,17 +180,17 @@ export class VideoService {
   async deleteVideo(id: string) {
     const video = await this.videoRepository.getVideoById(id);
     if (!video) throw new NotFoundException(`Video id ${id} not found`);
-    const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
-    try {
-      const deleteCommand = new DeleteObjectCommand({
-        Bucket,
-        Key: video.source,
-      });
-      await this.s3.send(deleteCommand);
-      await this.videoRepository.deleteVideo(id);
-    } catch (e) {
-      throw new InternalServerErrorException('Error deleting video on aws S3');
-    }
+    // const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
+    // try {
+    // const deleteCommand = new DeleteObjectCommand({
+    //   Bucket,
+    //   Key: video.source,
+    // });
+    // await this.s3.send(deleteCommand);
+    await this.videoRepository.deleteVideo(id);
+    // } catch (e) {
+    //   throw new InternalServerErrorException('Error deleting video on aws S3');
+    // }
     return { data: video, message: 'Video deleted successfully' };
   }
 
