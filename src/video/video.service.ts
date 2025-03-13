@@ -39,6 +39,7 @@ interface VideoTemp {
   description: string;
   transcript: string;
   categoryId: string[];
+  s3Url: string;
 }
 @Injectable()
 export class VideoService {
@@ -76,7 +77,7 @@ export class VideoService {
     const fileStatus = await this.s3.send(command);
     if (fileStatus.$metadata.httpStatusCode === 200) {
       this.logger.log(`File uploaded s3 successfully ${Key}`);
-      return await this.transcribeVideo(userId, orgId, Key);
+      return await this.processVideoData(userId, orgId, Key);
     }
   }
 
@@ -237,26 +238,35 @@ export class VideoService {
     }
   }
 
-  async processVideoData(
-    userId: string,
-    orgId: string,
-    videoUrl: string,
-    transcript: string,
-  ) {
+  async processVideoData(userId: string, orgId: string, videoUrl: string) {
     let video: VideoTemp = {
       source: videoUrl,
       userId,
       orgId,
       title: '',
       description: '',
-      transcript: transcript,
+      transcript: '',
       categoryId: [],
+      s3Url: '',
     };
 
     this.logger.log(`Starting video processing for: ${video.source}`);
 
     try {
       await this.rabbitmqService.ensureConnection();
+
+      const s3Url = convertS3Url(videoUrl);
+      this.logger.log(`Starting video processing for: ${s3Url}`);
+      video.s3Url = s3Url;
+      const transcribeResponse = (await firstValueFrom(
+        this.rabbitmqService.sendMessage<TranscribeRes>(
+          { cmd: 'transcribe' },
+          { videoUrl: s3Url },
+        ),
+      )) as TranscribeRes;
+
+      video.transcript = transcribeResponse.transcript;
+
       const categories = await this.categoryRepository.getCategories(orgId);
       const categoryNames = categories.map((category) => category.name);
 
@@ -297,7 +307,7 @@ export class VideoService {
       this.logger.log('Saved video', savedVideo);
       this.logger.log('Starting nsfw check');
       this.rabbitmqService.emitEvent('check-nsfw', {
-        videoUrl: video.source,
+        videoUrl: video.s3Url,
         videoId: savedVideo._id,
       });
       this.logger.log('Finished nsfw check');

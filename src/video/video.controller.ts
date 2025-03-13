@@ -274,30 +274,30 @@ export class VideoController {
   //   return this.videoService.test(userId, orgId, testDto);
   // }
 
-  @EventPattern('transcribe-result')
-  async handleProcessVideoData(data: TranscribeRes) {
-    try {
-      await this.rabbitmqService.ensureConnection();
-      if (!data.transcript) {
-        this.logger.log('Unable to receive transcript, stopping processing.');
-        await this.videoService.saveNewVideoWithouttranscript(
-          data.userId,
-          data.orgId,
-          data.videoUrl,
-        );
-      } else {
-        await this.videoService.processVideoData(
-          data.userId,
-          data.orgId,
-          data.videoUrl,
-          data.transcript,
-        );
-      }
-    } catch (error) {
-      this.logger.error(`Error process video data:`, error);
-      throw new InternalServerErrorException('Error video data');
-    }
-  }
+  // @EventPattern('transcribe-result')
+  // async handleProcessVideoData(data: TranscribeRes) {
+  //   try {
+  //     await this.rabbitmqService.ensureConnection();
+  //     if (!data.transcript) {
+  //       this.logger.log('Unable to receive transcript, stopping processing.');
+  //       await this.videoService.saveNewVideoWithouttranscript(
+  //         data.userId,
+  //         data.orgId,
+  //         data.videoUrl,
+  //       );
+  //     } else {
+  //       await this.videoService.processVideoData(
+  //         data.userId,
+  //         data.orgId,
+  //         data.videoUrl,
+  //         data.transcript,
+  //       );
+  //     }
+  //   } catch (error) {
+  //     this.logger.error(`Error process video data:`, error);
+  //     throw new InternalServerErrorException('Error video data');
+  //   }
+  // }
 
   @EventPattern('nsfw-result')
   handleCheckNsfw(data: ResultNSFWRes) {
