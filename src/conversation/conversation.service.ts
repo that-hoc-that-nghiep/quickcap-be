@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
 import { VideoRepository } from 'src/video/video.repository';
@@ -12,23 +12,34 @@ export class ConversationService {
     private videoRepository: VideoRepository,
     private conversationRepository: ConversationRepository,
   ) {}
-
+  private readonly logger = new Logger(ConversationService.name);
   async createConversation(userId: string, videoId: string, question: string) {
+    this.logger.log('Start create conversation');
     const transcript = (await this.videoRepository.getVideoById(videoId))
       .transcript;
-    const conversation =
-      await this.conversationRepository.getConversations(userId,videoId);
-
+    const conversation = await this.conversationRepository.getConversations(
+      userId,
+      videoId,
+    );
+    const conversationReq = conversation.map((c) => {
+      return {
+        role: c.role,
+        content: c.content,
+      };
+    });
+    console.log('conversation request', conversationReq);
+    this.logger.log("Send {cmd: 'chat'}");
     const response = await firstValueFrom(
       this.client.send(
         { cmd: 'chat' },
         {
           question,
-          conversation,
+          conversation: conversationReq,
           transcript,
         },
       ),
     );
+    this.logger.log('Api create conversation in database');
     const neWconversation =
       await this.conversationRepository.createConversation(
         userId,
@@ -36,6 +47,7 @@ export class ConversationService {
         question,
         response.response,
       );
+    this.logger.log('Start create conversation', neWconversation);
     return {
       data: neWconversation,
       message: 'Conversation created successfully',
@@ -47,26 +59,11 @@ export class ConversationService {
       userId,
       videoId,
     );
+    this.logger.log('Get all conversation', conversations);
     return {
       data: conversations,
       message: 'Conversations fetched successfully',
     };
   }
 
-  async test() {
-    console.log('test conversation');
-    this.client
-      .send(
-        { cmd: 'chat' },
-        {
-          question: 'thế cấu trúc câu phủ định là gìgì',
-          conversation: [],
-          transcript:
-            'Hello mọi người. Hello, hello, hello, hello. Hello mọi người nhiều và hello mọi người không nhiều. Hello đây là một cái buổi, nói chung là đây là một cái bài sẵn liên quan đến tiếng Nhật, bao gồm là câu khẳng định và câu phủ định. Thì trong đó là câu khẳng định thì sẽ là từ cái hệ của v cộng với max, ví dụ như là, tức là x cộng v cộng max. Ví dụ như là, tôi đến từ Việt Nam đi thì, Tôi đã đến từ Việt Nam đi. thì là, Cách này là bài sẵn liên quan đến tiếng Nhật nha, liên quan đến câu khẳng định ở trong tiếng Nhật và liên quan đến câu phủ định trong tiếng Nhật.',
-        },
-      )
-      .subscribe((res) => {
-        console.log('Res from chat ai', res);
-      });
-  }
 }

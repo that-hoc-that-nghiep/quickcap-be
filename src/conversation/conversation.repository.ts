@@ -25,7 +25,7 @@ export class ConversationRepository {
         userId: userId,
       },
       {
-        role: RoleChat.BOT,
+        role: RoleChat.AI,
         content: contentAi,
         videoId: videoId,
         userId: userId,

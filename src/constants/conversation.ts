@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsString } from 'class-validator';
 export enum RoleChat {
   USER = 'user',
-  BOT = 'bot',
+  AI = 'ai',
 }
 
 export class Message {

@@ -16,11 +16,6 @@ import { ConversationsResDto } from './dto/conversations-res.dto';
 export class ConversationController {
   constructor(private conversationService: ConversationService) {}
 
-  @Post('test')
-  test() {
-    return this.conversationService.test();
-  }
-
   @Post(':videoId')
   @ApiOperation({ summary: 'Create conversation' })
   @ApiParam({ name: 'videoId', type: 'string' })
@@ -55,6 +50,6 @@ export class ConversationController {
     @GetUser('id') userId: string,
     @Param('videoId') videoId: string,
   ) {
-    return this.conversationService.getConversations(userId,videoId);
+    return this.conversationService.getConversations(userId, videoId);
   }
 }
