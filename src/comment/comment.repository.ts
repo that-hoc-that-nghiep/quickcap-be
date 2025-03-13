@@ -25,7 +25,17 @@ export class CommentRepository {
   }
 
   async deleteCommentById(id: string) {
-    const comment = await this.commentModel.findByIdAndDelete(id).exec();
+    const comment = await this.commentModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: { isDeleted: true },
+        },
+        {
+          new: true,
+        },
+      )
+      .exec();
     if (!comment) throw new NotFoundException(`Comment id ${id} not found`);
     return comment;
   }

@@ -17,7 +17,7 @@ export class Category {
   orgId: string;
 
   @ApiProperty()
-  @Prop({ default: false })
+  @ApiProperty({ type: 'boolean', default: false })
   isDeleted: boolean;
 }
 

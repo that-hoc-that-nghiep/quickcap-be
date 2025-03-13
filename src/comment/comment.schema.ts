@@ -24,6 +24,10 @@ export class Comment {
   @ApiProperty()
   @Prop({ default: Date.now() })
   createdAt: Date;
+
+  @ApiProperty({ type: 'boolean', default: false })
+  @Prop({ default: false })
+  isDeleted: boolean;
 }
 
 export const CommentSchema = SchemaFactory.createForClass(Comment);
