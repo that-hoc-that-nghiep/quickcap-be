@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -11,7 +11,6 @@ export class CommentRepository {
   constructor(
     @InjectModel(Comment.name) private commentModel: Model<Comment>,
   ) {}
-
   async createComment(videoId: string, user: User, content: string) {
     const userComment: UserComment = {
       id: user.id,
@@ -26,7 +25,7 @@ export class CommentRepository {
     const comment = await this.commentModel.create({
       content,
       videoId,
-      userComment,
+      user: userComment,
     });
     return comment;
   }
