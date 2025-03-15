@@ -30,7 +30,7 @@ import { convertS3Url, extractS3Path } from 'src/utlis';
 import { ResultNSFWRes } from './dto/result-nsfw.res';
 import { checkNsfwReq } from './dto/check-nsfw.req';
 import { firstValueFrom } from 'rxjs';
-
+import { deburr } from 'lodash';
 interface VideoTemp {
   source: string;
   userId: string;
@@ -63,7 +63,7 @@ export class VideoService {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
-    const sanitizedFileName = file.originalname.replace(/\s+/g, '_');
+    const sanitizedFileName = deburr(file.originalname).replace(/\s+/g, '_');
     const Key: string = `${uuid()}-${sanitizedFileName}`;
     const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
     const ContentType = file.mimetype;
