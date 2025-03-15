@@ -38,6 +38,8 @@ import { GlobalCacheModule } from './global-module/cache.module';
         MAILER_EMAIL: Joi.string().required(),
         MAILER_PASSWORD: Joi.string().required(),
         AUTH_URL: Joi.string().required(),
+        QUEUE_NAME: Joi.string().required(),
+        QUEUE_NAME_2: Joi.string().required(),
       }),
     }),
     MongooseModule.forRootAsync({
