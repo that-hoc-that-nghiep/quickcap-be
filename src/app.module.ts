@@ -13,7 +13,6 @@ import { AuthModule } from './auth/auth.module';
 import * as Joi from 'joi';
 import { EnvVariables } from './constants';
 import { GlobalCacheModule } from './global-module/cache.module';
-import { VideoCategoryModule } from './video_category/video_category.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -59,7 +58,6 @@ import { VideoCategoryModule } from './video_category/video_category.module';
     MediaModule,
     ConversationModule,
     AuthModule,
-    VideoCategoryModule,
   ],
   controllers: [],
   providers: [],
