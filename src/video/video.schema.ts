@@ -36,18 +36,9 @@ export class Video {
   @Prop({ default: 0 })
   views: number;
 
-  @ApiProperty({
-    enum: VideoType,
-    examples: {
-      private: VideoType.PRIVATE,
-      public: VideoType.PUBLIC,
-    },
-  })
-  @Prop({
-    enum: VideoType,
-    default: VideoType.PRIVATE,
-  })
-  type: VideoType;
+  @ApiProperty()
+  @Prop({ default: 0 })
+  like: number;
 
   @ApiProperty()
   @Prop({ default: '' })

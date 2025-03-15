@@ -105,19 +105,15 @@ export class VideoService {
   async getVideoById(user: User, id: string) {
     const video = await this.videoRepository.getVideoById(id);
     const res = { data: video, message: 'Video fetched successfully' };
-    if (video.type === VideoType.PUBLIC) {
+    if (
+      user.id === video.userId ||
+      this.authService.isUserInVideoOrg(user, video.orgId)
+    ) {
       return res;
-    } else if (video.type === VideoType.PRIVATE) {
-      if (
-        user.id === video.userId ||
-        this.authService.isUserInVideoOrg(user, video.orgId)
-      ) {
-        return res;
-      }
-      throw new UnauthorizedException(
-        'You are not allowed to access this video',
-      );
     }
+    throw new UnauthorizedException(
+      'You are not allowed to access this video. Only the creator or user in the organization can access the video.',
+    );
   }
 
   async getVideosUnique(orgIdPersonal: string, orgIdTranfer: string) {
