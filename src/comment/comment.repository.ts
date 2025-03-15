@@ -3,6 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { Comment } from './comment.schema';
+import { User } from 'src/constants/user';
+import { UserComment } from './dto/user-comment.dto';
 
 @Injectable()
 export class CommentRepository {
@@ -10,11 +12,21 @@ export class CommentRepository {
     @InjectModel(Comment.name) private commentModel: Model<Comment>,
   ) {}
 
-  async createComment(videoId: string, userId: string, content: string) {
+  async createComment(videoId: string, user: User, content: string) {
+    const userComment: UserComment = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      given_name: user.given_name,
+      family_name: user.family_name,
+      picture: user.picture,
+      subscription: user.subscription,
+      timestamp: new Date().toISOString(),
+    };
     const comment = await this.commentModel.create({
       content,
       videoId,
-      userId,
+      userComment,
     });
     return comment;
   }
