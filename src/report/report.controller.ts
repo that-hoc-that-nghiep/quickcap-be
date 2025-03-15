@@ -3,12 +3,19 @@ import { ReportService } from './report.service';
 import { GetUser } from 'src/decorators/get-user.decorator';
 import { User } from 'src/constants/user';
 import { CreateReportDto } from './dto/create-report.dto';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiSecurity,
+} from '@nestjs/swagger';
 import { ReportType } from 'src/constants/report';
 import { ReportRes } from './dto/report.res';
 import { ReportsRes } from './dto/reports.res';
 import { AcceptReportDto } from './dto/accept-report.dto';
 
+@ApiSecurity('token')
 @Controller('report')
 export class ReportController {
   constructor(private reportService: ReportService) {}
@@ -70,12 +77,12 @@ export class ReportController {
     return this.reportService.getReportsByVideoId(videoId);
   }
 
-  @ApiOperation({ summary: 'Get all reports by videoId' })
+  @ApiOperation({ summary: 'Get report by id' })
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ type: ReportsRes })
   @Get(':id')
-  async getReportsByVideoId(@Param('id') videoId: string) {
-    return this.reportService.getReportsByVideoId(videoId);
+  async getReportsByVideoId(@Param('id') id: string) {
+    return this.reportService.getReportById(id);
   }
 
   @ApiOperation({ summary: 'Accept report' })
@@ -86,9 +93,7 @@ export class ReportController {
   async acceptReport(
     @Param('id') reportId: string,
     @Param('videoId') videoId: string,
-    @Body() acceptReportDto: AcceptReportDto,
   ) {
-    const { type } = acceptReportDto;
-    return this.reportService.acceptReport(reportId, videoId, type);
+    return this.reportService.acceptReport(reportId, videoId);
   }
 }

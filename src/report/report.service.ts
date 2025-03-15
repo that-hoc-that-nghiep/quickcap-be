@@ -45,11 +45,10 @@ export class ReportService {
     return { data: report, message: 'Report fetched successfully' };
   }
 
-  async acceptReport(reportId: string, videoId: string, type: string) {
+  async acceptReport(reportId: string, videoId: string) {
     const report = await this.reportRepository.acceptReport(
       reportId,
       videoId,
-      type,
     );
     return { data: report, message: 'Report accepted successfully' };
   }

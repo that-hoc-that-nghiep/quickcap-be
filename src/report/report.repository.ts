@@ -49,9 +49,9 @@ export class ReportRepository {
     return report;
   }
 
-  async acceptReport(reportId: string, videoId: string, type: string) {
+  async acceptReport(reportId: string, videoId: string) {
     const report = await this.getReportById(reportId);
-    const convertType: string = ReportNSWF[type];
+    const convertType: string = ReportNSWF[report.type];
     await this.videoRepository.updateVideoNSFW(videoId, true, convertType);
     const updateReport = await this.reportModel
       .findByIdAndUpdate(

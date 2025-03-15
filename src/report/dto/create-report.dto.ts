@@ -5,7 +5,6 @@ import { ReportType } from 'src/constants/report';
 
 export class CreateReportDto {
   @ApiProperty({ type: String })
-  @IsMongoId()
   videoId: string;
 
   @ApiProperty({ enum: ReportType })
