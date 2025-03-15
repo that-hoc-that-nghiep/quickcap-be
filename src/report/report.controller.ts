@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { ReportService } from './report.service';
 import { GetUser } from 'src/decorators/get-user.decorator';
 import { User } from 'src/constants/user';
@@ -7,6 +7,7 @@ import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { ReportType } from 'src/constants/report';
 import { ReportRes } from './dto/report.res';
 import { ReportsRes } from './dto/reports.res';
+import { AcceptReportDto } from './dto/accept-report.dto';
 
 @Controller('report')
 export class ReportController {
@@ -53,9 +54,12 @@ export class ReportController {
     const { type, content } = createReportDto;
     return this.reportService.createReport(user, videoId, type, content);
   }
-  @Get(':id')
-  async getReportsByVideoId(@Param('id') videoId: string) {
-    return this.reportService.getReportsByVideoId(videoId);
+
+  @ApiOperation({ summary: 'Get all reports' })
+  @ApiResponse({ type: ReportsRes })
+  @Get('all')
+  async getAllReports() {
+    return this.reportService.getAllReports();
   }
 
   @ApiOperation({ summary: 'Get all reports by videoId' })
@@ -64,5 +68,27 @@ export class ReportController {
   @Get('all/:videoId')
   async getAllReportsByVideoId(@Param('videoId') videoId: string) {
     return this.reportService.getReportsByVideoId(videoId);
+  }
+
+  @ApiOperation({ summary: 'Get all reports by videoId' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ type: ReportsRes })
+  @Get(':id')
+  async getReportsByVideoId(@Param('id') videoId: string) {
+    return this.reportService.getReportsByVideoId(videoId);
+  }
+
+  @ApiOperation({ summary: 'Accept report' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiParam({ name: 'videoId', type: String })
+  @ApiResponse({ type: ReportRes })
+  @Patch(':id/:videoId')
+  async acceptReport(
+    @Param('id') reportId: string,
+    @Param('videoId') videoId: string,
+    @Body() acceptReportDto: AcceptReportDto,
+  ) {
+    const { type } = acceptReportDto;
+    return this.reportService.acceptReport(reportId, videoId, type);
   }
 }

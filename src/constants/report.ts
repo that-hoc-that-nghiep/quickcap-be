@@ -1,10 +1,10 @@
 import { NSFWType } from './nsfw';
 
 export enum ReportType {
-  VIOLENCE = 'violence',
-  PORNOGRAPHY = 'pornography',
-  SEXUAL_CONTENT = 'sexual_content',
-  ADULT_ANIME = 'adult_anime',
+  VIOLENCE = 'Violence',
+  PORNOGRAPHY = 'Pornography',
+  SEXUAL_CONTENT = 'Sexual Content',
+  ADULT_ANIME = 'Adult Anime',
 }
 
 export const ReportNSWF: Record<ReportType, NSFWType> = {
