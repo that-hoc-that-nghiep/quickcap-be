@@ -25,16 +25,26 @@ export class ReportRepository {
       type,
       content,
     });
-    return newReport;
+    return newReport.populate('videoId');
   }
 
   async getReportsByVideoId(videoId: string) {
-    const reports = await this.reportModel.find({ videoId });
+    const reports = await this.reportModel
+      .find({ videoId })
+      .populate('videoId')
+      .exec();
     return reports;
   }
 
+  async getAllReports() {
+    const reports = await this.reportModel.find().populate('videoId').exec();
+    return reports;
+  }
   async getReportById(reportId: string) {
-    const report = await this.reportModel.findById(reportId);
+    const report = await this.reportModel
+      .findById(reportId)
+      .populate('videoId')
+      .exec();
     if (!report) throw new NotFoundException(`ReportId ${reportId} not found`);
     return report;
   }
@@ -43,16 +53,18 @@ export class ReportRepository {
     const report = await this.getReportById(reportId);
     const convertType: string = ReportNSWF[type];
     await this.videoRepository.updateVideoNSFW(videoId, true, convertType);
-    const updateReport = await this.reportModel.findByIdAndUpdate(
-      report._id,
-      {
-        $set: { approved: true },
-      },
-      {
-        new: true,
-        runValidators: true,
-      },
-    );
+    const updateReport = await this.reportModel
+      .findByIdAndUpdate(
+        report._id,
+        {
+          $set: { approved: true },
+        },
+        {
+          new: true,
+          runValidators: true,
+        },
+      )
+      .populate('videoId');
     return updateReport;
   }
 }

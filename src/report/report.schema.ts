@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
-import { HydratedDocument } from 'mongoose';
+import mongoose, { HydratedDocument } from 'mongoose';
 import { ReportType } from 'src/constants/report';
 import { UserApp } from 'src/constants/user';
+import { Video } from 'src/video/video.schema';
 
 export type ReportDocument = HydratedDocument<Report>;
 
@@ -14,8 +15,8 @@ export class Report {
   @Prop({ required: true })
   user: UserApp;
 
-  @ApiProperty()
-  @Prop({ required: true })
+  @ApiProperty({ type: Video })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Video', required: true })
   videoId: string;
 
   @ApiProperty({

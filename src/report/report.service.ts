@@ -35,6 +35,16 @@ export class ReportService {
     return { data: reports, message: 'Reports fetched successfully' };
   }
 
+  async getAllReports() {
+    const reports = await this.reportRepository.getAllReports();
+    return { data: reports, message: 'Reports fetched successfully' };
+  }
+
+  async getReportById(reportId: string) {
+    const report = await this.reportRepository.getReportById(reportId);
+    return { data: report, message: 'Report fetched successfully' };
+  }
+
   async acceptReport(reportId: string, videoId: string, type: string) {
     const report = await this.reportRepository.acceptReport(
       reportId,
