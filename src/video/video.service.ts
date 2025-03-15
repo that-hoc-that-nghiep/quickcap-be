@@ -20,7 +20,7 @@ import { UpdateVideoDto } from './dto/update-video.dto';
 import { VideoType } from 'src/constants/video';
 import { AuthService } from 'src/auth/auth.service';
 import { EnvVariables } from 'src/constants';
-import { User, UserPermission } from 'src/constants/user';
+import { User, UserApp, UserPermission } from 'src/constants/user';
 import { OrgType } from 'src/constants/org';
 import { TestDto } from './dto/test.dto';
 import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
@@ -33,7 +33,7 @@ import { firstValueFrom } from 'rxjs';
 import { deburr } from 'lodash';
 interface VideoTemp {
   source: string;
-  userId: string;
+  user: UserApp;
   orgId: string;
   title: string;
   description: string;
@@ -59,7 +59,7 @@ export class VideoService {
     region: this.configService.get<string>(EnvVariables.BUCKET_REGION),
   });
 
-  async uploadVideo(userId: string, orgId: string, file: Express.Multer.File) {
+  async uploadVideo(user: User, orgId: string, file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
@@ -77,7 +77,7 @@ export class VideoService {
     const fileStatus = await this.s3.send(command);
     if (fileStatus.$metadata.httpStatusCode === 200) {
       this.logger.log(`File uploaded s3 successfully ${Key}`);
-      return await this.processVideoData(userId, orgId, Key);
+      return await this.processVideoData(user, orgId, Key);
     }
   }
 
@@ -106,7 +106,7 @@ export class VideoService {
     const video = await this.videoRepository.getVideoById(id);
     const res = { data: video, message: 'Video fetched successfully' };
     if (
-      user.id === video.userId ||
+      user.id === video.user.id ||
       this.authService.isUserInVideoOrg(user, video.orgId)
     ) {
       return res;
@@ -132,7 +132,7 @@ export class VideoService {
     const { categoryId } = updateVideoDto;
     await this.categoryRepository.getCategoryByArrayId(categoryId);
     const video = await this.videoRepository.getVideoById(id);
-    if (video.userId !== userId)
+    if (video.user.id !== userId)
       throw new InternalServerErrorException(
         'You are not allowed to update this video. Only the creator can update the video.',
       );
@@ -234,10 +234,20 @@ export class VideoService {
     }
   }
 
-  async processVideoData(userId: string, orgId: string, videoUrl: string) {
+  async processVideoData(user: User, orgId: string, videoUrl: string) {
+    const userVideo: UserApp = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      given_name: user.given_name,
+      family_name: user.family_name,
+      picture: user.picture,
+      subscription: user.subscription,
+      timestamp: new Date().toISOString(),
+    };
     let video: VideoTemp = {
       source: videoUrl,
-      userId,
+      user: userVideo,
       orgId,
       title: '',
       description: '',
@@ -263,7 +273,7 @@ export class VideoService {
 
       if (!transcribeResponse.transcript) {
         const newVideo = await this.saveNewVideoWithouttranscript(
-          userId,
+          user,
           orgId,
           videoUrl,
         );
@@ -333,7 +343,7 @@ export class VideoService {
     this.logger.log(`Re source: ${reSource}`);
     try {
       const newVideo = await this.videoRepository.createVideo(
-        video.userId,
+        video.user.id,
         video.orgId,
         reSource,
         {
@@ -352,14 +362,14 @@ export class VideoService {
   }
 
   async saveNewVideoWithouttranscript(
-    userId: string,
+    user: UserApp,
     orgId: string,
     videoUrl: string,
   ) {
     try {
       const s3Url = convertS3Url(videoUrl);
       const newVideo = await this.videoRepository.createVideoWithoutTranscript(
-        userId,
+        user,
         orgId,
         videoUrl,
       );

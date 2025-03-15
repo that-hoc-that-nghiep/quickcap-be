@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { Category } from 'src/category/category.schema';
 import { NSFWType } from 'src/constants/nsfw';
+import { UserApp } from 'src/constants/user';
 import { VideoType } from 'src/constants/video';
 
 export type TaskDocument = HydratedDocument<Video>;
@@ -24,9 +25,9 @@ export class Video {
   @Prop({ required: true })
   source: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: UserApp })
   @Prop({ required: true })
-  userId: string;
+  user: UserApp;
 
   @ApiProperty()
   @Prop({ required: true, type: [String] })

@@ -8,6 +8,7 @@ import { Video } from './video.schema';
 import { Model } from 'mongoose';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
+import { UserApp } from 'src/constants/user';
 
 @Injectable()
 export class VideoRepository {
@@ -33,13 +34,13 @@ export class VideoRepository {
     return video.populate('categoryId');
   }
   async createVideoWithoutTranscript(
-    userId: string,
+    user: UserApp,
     orgId: string,
     source: string,
   ): Promise<Video> {
     const video = await this.videoModel.create({
       source,
-      userId,
+      user: user,
       orgId,
     });
     return video;

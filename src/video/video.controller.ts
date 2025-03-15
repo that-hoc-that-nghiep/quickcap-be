@@ -96,7 +96,7 @@ export class VideoController {
       (org) => org.type === OrgType.PERSONAL,
     ).id;
 
-    const res = await this.videoService.uploadVideo(user.id, orgId, file);
+    const res = await this.videoService.uploadVideo(user, orgId, file);
     return res;
   }
 
