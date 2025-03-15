@@ -15,7 +15,7 @@ export class VideoRepository {
   constructor(@InjectModel(Video.name) private videoModel: Model<Video>) {}
 
   async createVideo(
-    userId: string,
+    user: UserApp,
     orgId: string,
     source: string,
     createVideoDto: CreateVideoDto,
@@ -26,7 +26,7 @@ export class VideoRepository {
       title,
       description,
       source,
-      userId,
+      user,
       orgId,
       transcript,
       categoryId,

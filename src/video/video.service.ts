@@ -8,29 +8,27 @@ import {
 } from '@nestjs/common';
 import { VideoRepository } from './video.repository';
 import { CategoryRepository } from 'src/category/category.repository';
-import {
-  DeleteObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuid } from 'uuid';
-import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
-import { VideoType } from 'src/constants/video';
 import { AuthService } from 'src/auth/auth.service';
 import { EnvVariables } from 'src/constants';
 import { User, UserApp, UserPermission } from 'src/constants/user';
 import { OrgType } from 'src/constants/org';
-import { TestDto } from './dto/test.dto';
 import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
 import { VideoDataRes } from './dto/video-data.res';
 import { TranscribeRes } from './dto/transcibe.res';
-import { convertS3Url, extractS3Path } from 'src/utlis';
+import {
+  convertS3Url,
+  extractS3Path,
+  removeVietnameseAccents,
+} from 'src/utlis';
+
 import { ResultNSFWRes } from './dto/result-nsfw.res';
-import { checkNsfwReq } from './dto/check-nsfw.req';
+
 import { firstValueFrom } from 'rxjs';
-import { deburr } from 'lodash';
+
 interface VideoTemp {
   source: string;
   user: UserApp;
@@ -63,7 +61,7 @@ export class VideoService {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
-    const sanitizedFileName = deburr(file.originalname).replace(/\s+/g, '_');
+    const sanitizedFileName = removeVietnameseAccents(file.originalname);
     const Key: string = `${uuid()}-${sanitizedFileName}`;
     const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
     const ContentType = file.mimetype;
@@ -339,10 +337,11 @@ export class VideoService {
 
   async saveNewVideo(video: VideoTemp) {
     const reSource = extractS3Path(video.source);
-    this.logger.log(`Re source: ${reSource}`);
+    this.logger.log(`Resource: ${reSource}`);
+    this.logger.log('video temp', video);
     try {
       const newVideo = await this.videoRepository.createVideo(
-        video.user.id,
+        video.user,
         video.orgId,
         reSource,
         {
