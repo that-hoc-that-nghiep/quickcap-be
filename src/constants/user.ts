@@ -46,7 +46,4 @@ export class UserApp {
 
   @ApiProperty({ enum: UserSubscription, default: UserSubscription.FREE })
   subscription: UserSubscription;
-
-  @ApiProperty({ type: String })
-  timestamp: string;
 }

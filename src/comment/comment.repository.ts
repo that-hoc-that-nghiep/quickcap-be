@@ -20,7 +20,6 @@ export class CommentRepository {
       family_name: user.family_name,
       picture: user.picture,
       subscription: user.subscription,
-      timestamp: new Date().toISOString(),
     };
     const comment = await this.commentModel.create({
       content,

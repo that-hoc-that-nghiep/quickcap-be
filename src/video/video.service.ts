@@ -243,7 +243,6 @@ export class VideoService {
       family_name: user.family_name,
       picture: user.picture,
       subscription: user.subscription,
-      timestamp: new Date().toISOString(),
     };
     let video: VideoTemp = {
       source: videoUrl,
