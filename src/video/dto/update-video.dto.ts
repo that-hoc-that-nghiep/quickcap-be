@@ -8,7 +8,6 @@ import {
   IsString,
   Min,
 } from 'class-validator';
-import { VideoType } from 'src/constants/video';
 
 export class UpdateVideoDto {
   @ApiProperty({ required: false })
@@ -24,18 +23,22 @@ export class UpdateVideoDto {
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  summary?: string;
+  transcript?: string;
 
   @ApiProperty({ required: false })
   @IsNumber()
   @Min(0, { message: 'Views must be greater than or equal to 0.' })
   @IsOptional()
   views?: number;
+  @ApiProperty({ required: false })
+  @IsNumber()
+  like?: number;
+
+  @ApiProperty({ type: 'boolean', required: false })
+  isNSFW?: boolean;
 
   @ApiProperty({ required: false })
-  @IsEnum(VideoType)
-  @IsOptional()
-  type?: VideoType;
+  nsfwType?: string;
 
   @ApiProperty({ required: false })
   @IsArray()
