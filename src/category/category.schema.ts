@@ -9,7 +9,7 @@ export class Category {
   @ApiProperty()
   _id: string;
   @ApiProperty()
-  @Prop({ required: true })
+  @Prop({ required: true})
   name: string;
 
   @ApiProperty()

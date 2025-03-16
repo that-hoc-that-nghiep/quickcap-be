@@ -8,32 +8,31 @@ import {
 } from '@nestjs/common';
 import { VideoRepository } from './video.repository';
 import { CategoryRepository } from 'src/category/category.repository';
-import {
-  DeleteObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuid } from 'uuid';
-import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
-import { VideoType } from 'src/constants/video';
 import { AuthService } from 'src/auth/auth.service';
 import { EnvVariables } from 'src/constants';
-import { User, UserPermission } from 'src/constants/user';
+import { User, UserApp, UserPermission } from 'src/constants/user';
 import { OrgType } from 'src/constants/org';
-import { TestDto } from './dto/test.dto';
 import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
 import { VideoDataRes } from './dto/video-data.res';
 import { TranscribeRes } from './dto/transcibe.res';
-import { convertS3Url, extractS3Path } from 'src/utlis';
+import {
+  convertS3Url,
+  extractS3Path,
+  removeVietnameseAccents,
+} from 'src/utlis';
+
 import { ResultNSFWRes } from './dto/result-nsfw.res';
-import { checkNsfwReq } from './dto/check-nsfw.req';
+
 import { firstValueFrom } from 'rxjs';
+import { OrderVideo, VideoAdds } from 'src/constants/video';
 
 interface VideoTemp {
   source: string;
-  userId: string;
+  user: UserApp;
   orgId: string;
   title: string;
   description: string;
@@ -59,11 +58,11 @@ export class VideoService {
     region: this.configService.get<string>(EnvVariables.BUCKET_REGION),
   });
 
-  async uploadVideo(userId: string, orgId: string, file: Express.Multer.File) {
+  async uploadVideo(user: User, orgId: string, file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
-    const sanitizedFileName = file.originalname.replace(/\s+/g, '_');
+    const sanitizedFileName = removeVietnameseAccents(file.originalname);
     const Key: string = `${uuid()}-${sanitizedFileName}`;
     const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
     const ContentType = file.mimetype;
@@ -77,7 +76,7 @@ export class VideoService {
     const fileStatus = await this.s3.send(command);
     if (fileStatus.$metadata.httpStatusCode === 200) {
       this.logger.log(`File uploaded s3 successfully ${Key}`);
-      return await this.processVideoData(userId, orgId, Key);
+      return await this.processVideoData(user, orgId, Key);
     }
   }
 
@@ -88,6 +87,7 @@ export class VideoService {
     page: number,
     keyword?: string,
     categoryId?: string,
+    order?: OrderVideo,
   ) {
     if (!this.authService.isUserInOrg(user, orgId)) {
       throw new UnauthorizedException('User is not in the organization');
@@ -98,6 +98,7 @@ export class VideoService {
       page,
       keyword,
       categoryId,
+      order,
     );
     return { data: videos, message: 'Videos fetched successfully' };
   }
@@ -105,19 +106,15 @@ export class VideoService {
   async getVideoById(user: User, id: string) {
     const video = await this.videoRepository.getVideoById(id);
     const res = { data: video, message: 'Video fetched successfully' };
-    if (video.type === VideoType.PUBLIC) {
+    if (
+      user.id === video.user.id ||
+      this.authService.isUserInVideoOrg(user, video.orgId)
+    ) {
       return res;
-    } else if (video.type === VideoType.PRIVATE) {
-      if (
-        user.id === video.userId ||
-        this.authService.isUserInVideoOrg(user, video.orgId)
-      ) {
-        return res;
-      }
-      throw new UnauthorizedException(
-        'You are not allowed to access this video',
-      );
     }
+    throw new UnauthorizedException(
+      'You are not allowed to access this video. Only the creator or user in the organization can access the video.',
+    );
   }
 
   async getVideosUnique(orgIdPersonal: string, orgIdTranfer: string) {
@@ -136,7 +133,7 @@ export class VideoService {
     const { categoryId } = updateVideoDto;
     await this.categoryRepository.getCategoryByArrayId(categoryId);
     const video = await this.videoRepository.getVideoById(id);
-    if (video.userId !== userId)
+    if (video.user.id !== userId)
       throw new InternalServerErrorException(
         'You are not allowed to update this video. Only the creator can update the video.',
       );
@@ -147,35 +144,38 @@ export class VideoService {
     return { data: updateVideo, message: 'Video updated successfully' };
   }
 
-  async tranferLocationVideo(user: User, orgId: string, videoId: string) {
-    await this.videoRepository.checkVideoOwner(user.id, videoId);
-    const orgUser = this.authService.getOrgFromUser(user, orgId);
-    if (orgUser.type === OrgType.PERSONAL) {
-      throw new BadRequestException(
-        'You are not allowed to tranfer this video to org type PERSONAL.You only can tranfer the video from org type ORGANIZATION',
-      );
-    }
-    if (
-      orgUser.is_owner ||
-      orgUser.is_permission === UserPermission.UPLOAD ||
-      orgUser.is_permission === UserPermission.ALL
-    ) {
-      const updateVideo = await this.videoRepository.updateVideoOrgId(
-        videoId,
-        orgId,
-      );
-      return {
-        data: updateVideo,
-        message: `Add VideoId ${videoId} to orgId ${orgId} successfully`,
-      };
-    } else if (
-      !orgUser.is_owner ||
-      orgUser.is_permission === UserPermission.READ
-    ) {
-      throw new BadRequestException(
-        'You are not allowed to tranfer this video. Only the owner of the organization and user has permission UPLOAD can tranfer the video.',
-      );
-    }
+  // async AddVideoToOrg(user: User, videoId: string, orgCategories: OrgCategory[]) {
+  //   await this.videoRepository.checkVideoOwner(user.id, videoId);
+  //   const orgUser = this.authService.getOrgFromUser(user, orgId);
+  //   if (orgUser.type === OrgType.PERSONAL) {
+  //     throw new BadRequestException(
+  //       'You are not allowed to tranfer this video to org type PERSONAL.You only can tranfer the video from org type ORGANIZATION',
+  //     );
+  //   }
+  //   if (
+  //     orgUser.is_owner ||
+  //     orgUser.is_permission === UserPermission.UPLOAD ||
+  //     orgUser.is_permission === UserPermission.ALL
+  //   ) {
+  //     const updateVideo =
+  //       await this.videoRepository.updateVideoOrgIdsCategoryIds(videoId, orgId);
+  //     return {
+  //       data: updateVideo,
+  //       message: `Add VideoId ${videoId} to orgId ${orgId} successfully`,
+  //     };
+  //   } else if (
+  //     !orgUser.is_owner ||
+  //     orgUser.is_permission === UserPermission.READ
+  //   ) {
+  //     throw new BadRequestException(
+  //       'You are not allowed to tranfer this video. Only the owner of the organization and user has permission UPLOAD can tranfer the video.',
+  //     );
+  //   }
+  // }
+
+  async AddVideoToOrg(videoAdds: VideoAdds[]) {
+    const updatedVideos = await this.videoRepository.AddVideoToOrg(videoAdds);
+    return { data: updatedVideos, message: 'Video added to org successfully' };
   }
 
   async deleteVideo(id: string) {
@@ -238,10 +238,19 @@ export class VideoService {
     }
   }
 
-  async processVideoData(userId: string, orgId: string, videoUrl: string) {
+  async processVideoData(user: User, orgId: string, videoUrl: string) {
+    const userVideo: UserApp = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      given_name: user.given_name,
+      family_name: user.family_name,
+      picture: user.picture,
+      subscription: user.subscription,
+    };
     let video: VideoTemp = {
       source: videoUrl,
-      userId,
+      user: userVideo,
       orgId,
       title: '',
       description: '',
@@ -267,7 +276,7 @@ export class VideoService {
 
       if (!transcribeResponse.transcript) {
         const newVideo = await this.saveNewVideoWithouttranscript(
-          userId,
+          user,
           orgId,
           videoUrl,
         );
@@ -334,10 +343,11 @@ export class VideoService {
 
   async saveNewVideo(video: VideoTemp) {
     const reSource = extractS3Path(video.source);
-    this.logger.log(`Re source: ${reSource}`);
+    this.logger.log(`Resource: ${reSource}`);
+    this.logger.log('video temp', video);
     try {
       const newVideo = await this.videoRepository.createVideo(
-        video.userId,
+        video.user,
         video.orgId,
         reSource,
         {
@@ -356,14 +366,14 @@ export class VideoService {
   }
 
   async saveNewVideoWithouttranscript(
-    userId: string,
+    user: UserApp,
     orgId: string,
     videoUrl: string,
   ) {
     try {
       const s3Url = convertS3Url(videoUrl);
       const newVideo = await this.videoRepository.createVideoWithoutTranscript(
-        userId,
+        user,
         orgId,
         videoUrl,
       );
@@ -394,5 +404,13 @@ export class VideoService {
       this.logger.error('Error handleNsfw', e);
       throw new InternalServerErrorException(e);
     }
+  }
+
+  async getVideosByOrgIdAndCategoryId(orgId: string, categoryId: string) {
+    const videos = await this.videoRepository.getVideosByOrgIdAndCategoryId(
+      orgId,
+      categoryId,
+    );
+    return { data: videos, message: 'Videos fetched successfully' };
   }
 }

@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
-import mongoose, { HydratedDocument } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
+import { UserApp } from 'src/constants/user';
 
 export type CommentDocument = HydratedDocument<Comment>;
 
@@ -17,9 +18,9 @@ export class Comment {
   @Prop({ required: true })
   videoId: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: UserApp })
   @Prop({ required: true })
-  userId: string;
+  user: UserApp;
 
   @ApiProperty()
   @Prop({ default: Date.now() })

@@ -19,6 +19,8 @@ export const EnvVariables: Record<string, string> = {
   MAILER_EMAIL: 'MAILER_EMAIL',
   MAILER_PASSWORD: 'MAILER_PASSWORD',
   AUTH_URL: 'AUTH_URL',
+  QUEUE_NAME: 'QUEUE_NAME',
+  QUEUE_NAME_2: 'QUEUE_NAME_2',
 };
 
 export enum VideoCategory {
@@ -29,6 +31,4 @@ export enum VideoCategory {
   SEXY = 'Sexy',
 }
 
-export const QUEUE_NAME = 'quickcap';
-export const QUEUE_NAME_2 = 'quickcap-nsfw';
 export const SERVICE_NAME = 'quickcap-ai';

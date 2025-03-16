@@ -8,13 +8,15 @@ import { Video } from './video.schema';
 import { Model } from 'mongoose';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
+import { UserApp } from 'src/constants/user';
+import { OrderVideo, VideoAdds } from 'src/constants/video';
 
 @Injectable()
 export class VideoRepository {
   constructor(@InjectModel(Video.name) private videoModel: Model<Video>) {}
 
   async createVideo(
-    userId: string,
+    user: UserApp,
     orgId: string,
     source: string,
     createVideoDto: CreateVideoDto,
@@ -25,7 +27,7 @@ export class VideoRepository {
       title,
       description,
       source,
-      userId,
+      user,
       orgId,
       transcript,
       categoryId,
@@ -33,13 +35,13 @@ export class VideoRepository {
     return video.populate('categoryId');
   }
   async createVideoWithoutTranscript(
-    userId: string,
+    user: UserApp,
     orgId: string,
     source: string,
   ): Promise<Video> {
     const video = await this.videoModel.create({
       source,
-      userId,
+      user: user,
       orgId,
     });
     return video;
@@ -51,6 +53,7 @@ export class VideoRepository {
     page: number,
     keyword?: string,
     categoryId?: string,
+    order: OrderVideo = OrderVideo.DESC,
   ): Promise<{
     videos: Video[];
     total: number;
@@ -59,16 +62,20 @@ export class VideoRepository {
       orgId: { $in: [orgId] },
     };
     if (keyword && keyword.trim() !== '') {
-      filter.title = { $regex: keyword, $options: 'i' };
+      filter.$or = [
+        { title: { $regex: keyword, $options: 'i' } },
+        { description: { $regex: keyword, $options: 'i' } },
+      ];
     }
 
     if (categoryId && categoryId.trim() !== '') {
       filter.categoryId = { $in: [categoryId] };
     }
     const skip = (page - 1) * limit;
+    const sortOrder = order === 'asc' ? 1 : -1;
     const videos = await this.videoModel
       .find(filter)
-      .sort({ _id: -1 })
+      .sort({ createdAt: sortOrder })
       .skip(skip)
       .limit(limit)
       .populate('categoryId')
@@ -156,13 +163,20 @@ export class VideoRepository {
     return uniqueVideos;
   }
 
-  async updateVideoOrgId(videoId: string, orgId: string) {
+  async updateVideoOrgIdsCategoryIds(
+    videoId: string,
+    orgIds: string[],
+    categoryIds: string[],
+  ) {
     const video = await this.videoModel.findById(videoId);
     if (!video) throw new NotFoundException(`Video id ${videoId} not found`);
     const updateVideo = await this.videoModel.findByIdAndUpdate(
       videoId,
       {
-        $addToSet: { orgId },
+        $addToSet: {
+          orgId: { $each: orgIds },
+          categoryId: { $each: categoryIds },
+        },
       },
       {
         new: true,
@@ -206,5 +220,35 @@ export class VideoRepository {
       },
     );
     return updateVideo;
+  }
+
+  async AddVideoToOrg(videoAdds: VideoAdds[]) {
+    const bulkOps = videoAdds.map((v) => ({
+      updateOne: {
+        filter: { _id: v.videoId },
+        update: {
+          $addToSet: { orgId: v.orgId, categoryId: v.categoryId },
+        },
+      },
+    }));
+
+    await this.videoModel.bulkWrite(bulkOps);
+    const updatedVideos = await this.videoModel.find({
+      _id: { $in: videoAdds.map((v) => v.videoId) },
+    });
+    return updatedVideos;
+  }
+
+  async getVideosByOrgIdAndCategoryId(orgId: string, categoryId: string) {
+    const videos = await this.videoModel
+      .find({ categoryId: { $in: [categoryId] } })
+      .populate({
+        path: 'categoryId',
+        match: { orgId: orgId },
+        select: '_id name orgId',
+      })
+      .exec();
+
+    return videos.filter((video) => video.categoryId !== null);
   }
 }

@@ -5,6 +5,7 @@ import { GetUser } from 'src/decorators/get-user.decorator';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CommentResDto } from './dto/comment-res.dto';
 import { CommentsResDto } from './dto/comments-res.dto';
+import { User } from 'src/constants/user';
 
 @ApiSecurity('token')
 @Controller('comment')
@@ -20,11 +21,11 @@ export class CommentController {
   })
   createComment(
     @Param('videoId') videoId: string,
-    @GetUser('id') userId: string,
+    @GetUser() user: User,
     @Body() createCommentDto: CreateCommentDto,
   ) {
     const { content } = createCommentDto;
-    const comment = this.commentService.createComment(videoId, userId, content);
+    const comment = this.commentService.createComment(videoId, user, content);
     return comment;
   }
 

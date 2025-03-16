@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { CommentRepository } from './comment.repository';
+import { User } from 'src/constants/user';
 
 @Injectable()
 export class CommentService {
   constructor(private commentRepository: CommentRepository) {}
 
-  async createComment(videoId: string, userId: string, content: string) {
+  async createComment(videoId: string, user: User, content: string) {
     const comment = await this.commentRepository.createComment(
       videoId,
-      userId,
+      user,
       content,
     );
     return comment;

@@ -7,7 +7,7 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from './auth/auth.guard';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { EnvVariables, QUEUE_NAME, QUEUE_NAME_2 } from './constants';
+import { EnvVariables } from './constants';
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { RabbitMQExceptionFilter } from './exception-filters/rabbitmq-exception.filter';
 
@@ -42,7 +42,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [rmqUrl],
-      queue: QUEUE_NAME_2,
+      queue: configService.get<string>(EnvVariables.QUEUE_NAME_2),
       queueOptions: {
         durable: true,
       },
@@ -50,5 +50,6 @@ async function bootstrap() {
   });
   await app.startAllMicroservices();
   await app.listen(configService.get<number>(EnvVariables.PORT) ?? 8080);
+
 }
 bootstrap();
