@@ -28,7 +28,7 @@ import {
 import { ResultNSFWRes } from './dto/result-nsfw.res';
 
 import { firstValueFrom } from 'rxjs';
-import { VideoAdds } from 'src/constants/video';
+import { OrderVideo, VideoAdds } from 'src/constants/video';
 
 interface VideoTemp {
   source: string;
@@ -87,6 +87,7 @@ export class VideoService {
     page: number,
     keyword?: string,
     categoryId?: string,
+    order?: OrderVideo,
   ) {
     if (!this.authService.isUserInOrg(user, orgId)) {
       throw new UnauthorizedException('User is not in the organization');
@@ -97,6 +98,7 @@ export class VideoService {
       page,
       keyword,
       categoryId,
+      order,
     );
     return { data: videos, message: 'Videos fetched successfully' };
   }

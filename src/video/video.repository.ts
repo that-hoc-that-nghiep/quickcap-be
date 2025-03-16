@@ -9,7 +9,7 @@ import { Model } from 'mongoose';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { UserApp } from 'src/constants/user';
-import { VideoAdds } from 'src/constants/video';
+import { OrderVideo, VideoAdds } from 'src/constants/video';
 
 @Injectable()
 export class VideoRepository {
@@ -53,6 +53,7 @@ export class VideoRepository {
     page: number,
     keyword?: string,
     categoryId?: string,
+    order: OrderVideo = OrderVideo.DESC,
   ): Promise<{
     videos: Video[];
     total: number;
@@ -71,9 +72,10 @@ export class VideoRepository {
       filter.categoryId = { $in: [categoryId] };
     }
     const skip = (page - 1) * limit;
+    const sortOrder = order === 'asc' ? 1 : -1;
     const videos = await this.videoModel
       .find(filter)
-      .sort({ _id: -1 })
+      .sort({ createdAt: sortOrder })
       .skip(skip)
       .limit(limit)
       .populate('categoryId')

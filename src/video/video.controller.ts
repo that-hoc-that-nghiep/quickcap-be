@@ -27,7 +27,7 @@ import { ApiDocsPagination } from 'src/decorators/swagger-form-data.decorator';
 import { GetUser } from 'src/decorators/get-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateVideoDto } from './dto/update-video.dto';
-import { VideoType } from 'src/constants/video';
+import { OrderVideo, VideoType } from 'src/constants/video';
 import { OrgType } from 'src/constants/org';
 import { User } from 'src/constants/user';
 import { Video } from './video.schema';
@@ -114,6 +114,7 @@ export class VideoController {
     @Query('page', ParseIntPipe) page: number,
     @Query('keyword') keyword?: string,
     @Query('categoryId') categoryId?: string,
+    @Query('order') order?: OrderVideo,
   ) {
     return this.videoService.getAllVideos(
       user,
@@ -122,6 +123,7 @@ export class VideoController {
       page,
       keyword,
       categoryId,
+      order,
     );
   }
 

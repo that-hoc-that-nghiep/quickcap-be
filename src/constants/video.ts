@@ -17,3 +17,8 @@ export class VideoAdds {
   @IsString()
   categoryId: string;
 }
+
+export enum OrderVideo {
+  ASC = 'asc',
+  DESC = 'desc',
+}

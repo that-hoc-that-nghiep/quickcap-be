@@ -109,5 +109,11 @@ export function ApiDocsPagination(entity: string) {
       required: false,
       description: 'Filter by category id',
     }),
+    ApiQuery({
+      name: 'order',
+      enum: ['asc', 'desc'],
+      required: false,
+      description: 'Filter by order asc or desc',
+    }),
   );
 }
