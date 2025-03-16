@@ -4,7 +4,6 @@ import {
   Controller,
   Delete,
   Get,
-  InternalServerErrorException,
   Logger,
   Param,
   ParseIntPipe,
@@ -34,11 +33,10 @@ import { User } from 'src/constants/user';
 import { Video } from './video.schema';
 import { VideoResponseDto } from './dto/video-res.dto';
 import { VideosResponseDto } from './dto/videos-res.dto';
-import { TranferVideoDto } from './dto/tranfer-video.dto';
 import { EventPattern } from '@nestjs/microservices';
 import { ResultNSFWRes } from './dto/result-nsfw.res';
-import { TranscribeRes } from './dto/transcibe.res';
 import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
+import { AddVideoToOrgDto } from './dto/add-to-org.dto';
 
 @ApiTags('Video')
 @ApiSecurity('token')
@@ -153,22 +151,19 @@ export class VideoController {
     return this.videoService.getVideosUnique(orgIdPersonal, orgId);
   }
 
-  @Patch('tranfer')
-  @ApiOperation({ summary: 'Add location video to another organization' })
+  @Patch('addToOrg')
+  @ApiOperation({ summary: 'Add video to organization' })
   @ApiBody({
-    type: TranferVideoDto,
+    type: AddVideoToOrgDto,
   })
   @ApiResponse({
     status: 200,
     description: 'Add video to org successfully',
     type: VideoResponseDto,
   })
-  async tranferVideo(
-    @GetUser() user: User,
-    @Body() tranferVideoDto: TranferVideoDto,
-  ) {
-    const { videoId, orgId } = tranferVideoDto;
-    return this.videoService.tranferLocationVideo(user, orgId, videoId);
+  async AddVideoToOrg(@Body() addVideoToOrgDto: AddVideoToOrgDto) {
+    const { videoAdds } = addVideoToOrgDto;
+    return this.videoService.AddVideoToOrg(videoAdds);
   }
 
   @Patch(':id')

@@ -28,6 +28,7 @@ import {
 import { ResultNSFWRes } from './dto/result-nsfw.res';
 
 import { firstValueFrom } from 'rxjs';
+import { VideoAdds } from 'src/constants/video';
 
 interface VideoTemp {
   source: string;
@@ -141,35 +142,38 @@ export class VideoService {
     return { data: updateVideo, message: 'Video updated successfully' };
   }
 
-  async tranferLocationVideo(user: User, orgId: string, videoId: string) {
-    await this.videoRepository.checkVideoOwner(user.id, videoId);
-    const orgUser = this.authService.getOrgFromUser(user, orgId);
-    if (orgUser.type === OrgType.PERSONAL) {
-      throw new BadRequestException(
-        'You are not allowed to tranfer this video to org type PERSONAL.You only can tranfer the video from org type ORGANIZATION',
-      );
-    }
-    if (
-      orgUser.is_owner ||
-      orgUser.is_permission === UserPermission.UPLOAD ||
-      orgUser.is_permission === UserPermission.ALL
-    ) {
-      const updateVideo = await this.videoRepository.updateVideoOrgId(
-        videoId,
-        orgId,
-      );
-      return {
-        data: updateVideo,
-        message: `Add VideoId ${videoId} to orgId ${orgId} successfully`,
-      };
-    } else if (
-      !orgUser.is_owner ||
-      orgUser.is_permission === UserPermission.READ
-    ) {
-      throw new BadRequestException(
-        'You are not allowed to tranfer this video. Only the owner of the organization and user has permission UPLOAD can tranfer the video.',
-      );
-    }
+  // async AddVideoToOrg(user: User, videoId: string, orgCategories: OrgCategory[]) {
+  //   await this.videoRepository.checkVideoOwner(user.id, videoId);
+  //   const orgUser = this.authService.getOrgFromUser(user, orgId);
+  //   if (orgUser.type === OrgType.PERSONAL) {
+  //     throw new BadRequestException(
+  //       'You are not allowed to tranfer this video to org type PERSONAL.You only can tranfer the video from org type ORGANIZATION',
+  //     );
+  //   }
+  //   if (
+  //     orgUser.is_owner ||
+  //     orgUser.is_permission === UserPermission.UPLOAD ||
+  //     orgUser.is_permission === UserPermission.ALL
+  //   ) {
+  //     const updateVideo =
+  //       await this.videoRepository.updateVideoOrgIdsCategoryIds(videoId, orgId);
+  //     return {
+  //       data: updateVideo,
+  //       message: `Add VideoId ${videoId} to orgId ${orgId} successfully`,
+  //     };
+  //   } else if (
+  //     !orgUser.is_owner ||
+  //     orgUser.is_permission === UserPermission.READ
+  //   ) {
+  //     throw new BadRequestException(
+  //       'You are not allowed to tranfer this video. Only the owner of the organization and user has permission UPLOAD can tranfer the video.',
+  //     );
+  //   }
+  // }
+
+  async AddVideoToOrg(videoAdds: VideoAdds[]) {
+    const updatedVideos = await this.videoRepository.AddVideoToOrg(videoAdds);
+    return { data: updatedVideos, message: 'Video added to org successfully' };
   }
 
   async deleteVideo(id: string) {

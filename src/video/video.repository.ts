@@ -9,6 +9,7 @@ import { Model } from 'mongoose';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { UserApp } from 'src/constants/user';
+import { VideoAdds } from 'src/constants/video';
 
 @Injectable()
 export class VideoRepository {
@@ -157,13 +158,20 @@ export class VideoRepository {
     return uniqueVideos;
   }
 
-  async updateVideoOrgId(videoId: string, orgId: string) {
+  async updateVideoOrgIdsCategoryIds(
+    videoId: string,
+    orgIds: string[],
+    categoryIds: string[],
+  ) {
     const video = await this.videoModel.findById(videoId);
     if (!video) throw new NotFoundException(`Video id ${videoId} not found`);
     const updateVideo = await this.videoModel.findByIdAndUpdate(
       videoId,
       {
-        $addToSet: { orgId },
+        $addToSet: {
+          orgId: { $each: orgIds },
+          categoryId: { $each: categoryIds },
+        },
       },
       {
         new: true,
@@ -207,5 +215,22 @@ export class VideoRepository {
       },
     );
     return updateVideo;
+  }
+
+  async AddVideoToOrg(videoAdds: VideoAdds[]) {
+    const bulkOps = videoAdds.map((v) => ({
+      updateOne: {
+        filter: { _id: v.videoId },
+        update: {
+          $addToSet: { orgId: v.orgId, categoryId: v.categoryId },
+        },
+      },
+    }));
+
+    await this.videoModel.bulkWrite(bulkOps);
+    const updatedVideos = await this.videoModel.find({
+      _id: { $in: videoAdds.map((v) => v.videoId) },
+    });
+    return updatedVideos;
   }
 }
