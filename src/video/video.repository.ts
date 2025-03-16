@@ -61,7 +61,10 @@ export class VideoRepository {
       orgId: { $in: [orgId] },
     };
     if (keyword && keyword.trim() !== '') {
-      filter.title = { $regex: keyword, $options: 'i' };
+      filter.$or = [
+        { title: { $regex: keyword, $options: 'i' } },
+        { description: { $regex: keyword, $options: 'i' } },
+      ];
     }
 
     if (categoryId && categoryId.trim() !== '') {
@@ -232,5 +235,18 @@ export class VideoRepository {
       _id: { $in: videoAdds.map((v) => v.videoId) },
     });
     return updatedVideos;
+  }
+
+  async getVideosByOrgIdAndCategoryId(orgId: string, categoryId: string) {
+    const videos = await this.videoModel
+      .find({ categoryId: { $in: [categoryId] } })
+      .populate({
+        path: 'categoryId',
+        match: { orgId: orgId },
+        select: '_id name orgId',
+      })
+      .exec();
+
+    return videos.filter((video) => video.categoryId !== null);
   }
 }

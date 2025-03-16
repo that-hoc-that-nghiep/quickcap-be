@@ -403,4 +403,12 @@ export class VideoService {
       throw new InternalServerErrorException(e);
     }
   }
+
+  async getVideosByOrgIdAndCategoryId(orgId: string, categoryId: string) {
+    const videos = await this.videoRepository.getVideosByOrgIdAndCategoryId(
+      orgId,
+      categoryId,
+    );
+    return { data: videos, message: 'Videos fetched successfully' };
+  }
 }
