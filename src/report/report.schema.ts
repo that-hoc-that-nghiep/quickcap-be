@@ -38,6 +38,10 @@ export class Report {
   @ApiProperty()
   @Prop({ default: false })
   approved: boolean;
+
+  @ApiProperty()
+  @Prop({ default: Date.now() })
+  createdAt: Date;
 }
 
 export const ReportSchema = SchemaFactory.createForClass(Report);
