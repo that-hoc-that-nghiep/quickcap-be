@@ -307,21 +307,26 @@ export class VideoService {
 
       video.title = videoDataResponse.title;
       video.description = videoDataResponse.description;
-
-      if (videoDataResponse.isNewCategory) {
-        this.logger.log('Is new category');
-        const newCategory = await this.categoryRepository.createCatogory(
-          video.orgId,
-          videoDataResponse.category,
-        );
-        video.categoryId.push(newCategory._id);
-      } else {
-        this.logger.log('Is not new category');
-        const category = await this.categoryRepository.getCategoryByName(
-          videoDataResponse.category,
-        );
-        video.categoryId.push(category._id);
-      }
+      this.logger.log('Create default category');
+      const newCategory = await this.categoryRepository.createCatogory(
+        video.orgId,
+        'Default',
+      );
+      video.categoryId.push(newCategory._id);
+      // if (videoDataResponse.isNewCategory) {
+      //   this.logger.log('Create default category');
+      //   const newCategory = await this.categoryRepository.createCatogory(
+      //     video.orgId,
+      //     'Default',
+      //   );
+      //   video.categoryId.push(newCategory._id);
+      // } else {
+      //   this.logger.log('Is not new category');
+      //   const category = await this.categoryRepository.getCategoryByName(
+      //     videoDataResponse.category,
+      //   );
+      //   video.categoryId.push(category._id);
+      // }
 
       const savedVideo = await this.saveNewVideo(video);
       this.logger.log('Saved video', savedVideo);
