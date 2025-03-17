@@ -1,11 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { CategoryRepository } from './category.repository';
-import { Category } from './category.schema';
+
 import { CreateCategoryDto } from './dto/create-category.dto';
+
+import { firstValueFrom } from 'rxjs';
+import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
+import { CategorySuggestRes } from './dto/category-suggest-res';
 
 @Injectable()
 export class CategoryService {
-  constructor(private categoryRepository: CategoryRepository) {}
+  constructor(
+    private categoryRepository: CategoryRepository,
+    public readonly rabbitmqService: RabbitmqService,
+  ) {}
+  private readonly logger = new Logger(CategoryService.name);
 
   async getCategories(orgId: string) {
     const categories = await this.categoryRepository.getCategories(orgId);
@@ -25,5 +37,33 @@ export class CategoryService {
   async deleteCategory(id: string) {
     const category = await this.categoryRepository.deleteCategory(id);
     return { data: category, message: 'Category deleted successfully' };
+  }
+
+  async suggestCategoryVideoByAi(orgId: string, transcript: string) {
+    this.logger.log(`Prossing suggest category`);
+    const categories = await this.categoryRepository.getCategories(orgId);
+    const categoryNames = categories.map((category) => category.name);
+    this.logger.log(`Category names: ${categoryNames}`);
+    try {
+      await this.rabbitmqService.ensureConnection();
+      this.logger.log('Starting suggest category by ai');
+      const resCategorySuggest = (await firstValueFrom(
+        this.rabbitmqService.sendMessage<CategorySuggestRes>(
+          { cmd: 'category-suggest' },
+          {
+            transcript: transcript,
+            categories: categoryNames,
+          },
+        ),
+      )) as CategorySuggestRes;
+      this.logger.log('Finished suggest category by ai');
+      return {
+        data: resCategorySuggest,
+        message: 'Category suggested by ai successfully',
+      };
+    } catch (error) {
+      this.logger.error(`Error in suggest category by ai:`, error);
+      throw new InternalServerErrorException('Error processing video');
+    }
   }
 }

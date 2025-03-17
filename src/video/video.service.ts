@@ -295,7 +295,6 @@ export class VideoService {
           { cmd: 'video-data' },
           {
             transcript: video.transcript,
-            categories: categoryNames,
           },
         ),
       )) as VideoDataRes;
@@ -418,4 +417,32 @@ export class VideoService {
     );
     return { data: videos, message: 'Videos fetched successfully' };
   }
+
+  // async suggestCategoryVideoByAi(videoId: string, orgId: string) {
+  //   this.logger.log(`Prossing suggest category for videoId ${videoId}`);
+  //   const categories = await this.categoryRepository.getCategories(orgId);
+  //   const categoryNames = categories.map((category) => category.name);
+  //   const video = await this.videoRepository.getVideoById(videoId);
+  //   try {
+  //     await this.rabbitmqService.ensureConnection();
+  //     this.logger.log('Starting suggest category by ai');
+  //     const resCategorySuggest = (await firstValueFrom(
+  //       this.rabbitmqService.sendMessage<CategorySuggestRes>(
+  //         { cmd: 'category-suggest' },
+  //         {
+  //           transcript: video.transcript,
+  //           categories: categoryNames,
+  //         },
+  //       ),
+  //     )) as CategorySuggestRes;
+  //     this.logger.log('Finished suggest category by ai');
+  //     return {
+  //       data: resCategorySuggest,
+  //       message: 'Category suggested by ai successfully',
+  //     };
+  //   } catch (error) {
+  //     this.logger.error(`Error in suggest category by ai:`, error);
+  //     throw new InternalServerErrorException('Error processing video');
+  //   }
+  // }
 }

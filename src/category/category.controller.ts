@@ -11,7 +11,8 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { CategoryService } from './category.service';
 import { CategoryResponseDto } from './dto/category-res.dto';
 import { CategoriesResponseDto } from './dto/categories-res.dto';
-import { GetUser } from 'src/decorators/get-user.decorator';
+import { CategorySuggestRes } from './dto/category-suggest-res';
+import { CreateCategorySuggestDto } from './dto/create-category-suggest.dto';
 
 @ApiTags('Category')
 @ApiSecurity('token')
@@ -46,6 +47,27 @@ export class CategoryController {
     @Body() createCategoryDto: CreateCategoryDto,
   ) {
     return this.categoryService.createCategory(orgId, createCategoryDto);
+  }
+
+  @Post('suggest/:orgId')
+  @ApiOperation({
+    summary: 'Suggest category for video',
+  })
+  @ApiParam({ name: 'orgId', type: 'string', required: true })
+  @ApiResponse({
+    status: 200,
+    description: 'Category suggested by ai successfully',
+    type: CategorySuggestRes,
+  })
+  @ApiBody({
+    type: CreateCategorySuggestDto,
+  })
+  async suggestCategoryVideoByAi(
+    @Param('orgId') orgId: string,
+    @Body() createCategorySuggestDto: CreateCategorySuggestDto,
+  ) {
+    const { transcript } = createCategorySuggestDto;
+    return this.categoryService.suggestCategoryVideoByAi(orgId, transcript);
   }
 
   @ApiOperation({ summary: 'Get a category by id' })

@@ -98,6 +98,24 @@ export class VideoController {
     return res;
   }
 
+  // @Post('suggest/:videoId/:orgId')
+  // @ApiOperation({
+  //   summary: 'Suggest category for video',
+  // })
+  // @ApiParam({ name: 'videoId', type: 'string', required: true })
+  // @ApiParam({ name: 'orgId', type: 'string', required: true })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Category suggested by ai successfully',
+  //   type: CategorySuggestRes,
+  // })
+  // async suggestCategoryVideoByAi(
+  //   @Param('videoId') videoId: string,
+  //   @Param('orgId') orgId: string,
+  // ) {
+  //   return this.videoService.suggestCategoryVideoByAi(videoId, orgId);
+  // }
+
   @Get('all/:orgId')
   @ApiOperation({ summary: 'Get all videos' })
   @ApiParam({ name: 'orgId', type: 'string' })
