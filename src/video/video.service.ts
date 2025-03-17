@@ -295,7 +295,6 @@ export class VideoService {
           { cmd: 'video-data' },
           {
             transcript: video.transcript,
-            categories: categoryNames,
           },
         ),
       )) as VideoDataRes;
@@ -307,21 +306,26 @@ export class VideoService {
 
       video.title = videoDataResponse.title;
       video.description = videoDataResponse.description;
-
-      if (videoDataResponse.isNewCategory) {
-        this.logger.log('Is new category');
-        const newCategory = await this.categoryRepository.createCatogory(
-          video.orgId,
-          videoDataResponse.category,
-        );
-        video.categoryId.push(newCategory._id);
-      } else {
-        this.logger.log('Is not new category');
-        const category = await this.categoryRepository.getCategoryByName(
-          videoDataResponse.category,
-        );
-        video.categoryId.push(category._id);
-      }
+      this.logger.log('Create default category');
+      const newCategory = await this.categoryRepository.createCatogory(
+        video.orgId,
+        'Default',
+      );
+      video.categoryId.push(newCategory._id);
+      // if (videoDataResponse.isNewCategory) {
+      //   this.logger.log('Create default category');
+      //   const newCategory = await this.categoryRepository.createCatogory(
+      //     video.orgId,
+      //     'Default',
+      //   );
+      //   video.categoryId.push(newCategory._id);
+      // } else {
+      //   this.logger.log('Is not new category');
+      //   const category = await this.categoryRepository.getCategoryByName(
+      //     videoDataResponse.category,
+      //   );
+      //   video.categoryId.push(category._id);
+      // }
 
       const savedVideo = await this.saveNewVideo(video);
       this.logger.log('Saved video', savedVideo);
@@ -413,4 +417,32 @@ export class VideoService {
     );
     return { data: videos, message: 'Videos fetched successfully' };
   }
+
+  // async suggestCategoryVideoByAi(videoId: string, orgId: string) {
+  //   this.logger.log(`Prossing suggest category for videoId ${videoId}`);
+  //   const categories = await this.categoryRepository.getCategories(orgId);
+  //   const categoryNames = categories.map((category) => category.name);
+  //   const video = await this.videoRepository.getVideoById(videoId);
+  //   try {
+  //     await this.rabbitmqService.ensureConnection();
+  //     this.logger.log('Starting suggest category by ai');
+  //     const resCategorySuggest = (await firstValueFrom(
+  //       this.rabbitmqService.sendMessage<CategorySuggestRes>(
+  //         { cmd: 'category-suggest' },
+  //         {
+  //           transcript: video.transcript,
+  //           categories: categoryNames,
+  //         },
+  //       ),
+  //     )) as CategorySuggestRes;
+  //     this.logger.log('Finished suggest category by ai');
+  //     return {
+  //       data: resCategorySuggest,
+  //       message: 'Category suggested by ai successfully',
+  //     };
+  //   } catch (error) {
+  //     this.logger.error(`Error in suggest category by ai:`, error);
+  //     throw new InternalServerErrorException('Error processing video');
+  //   }
+  // }
 }

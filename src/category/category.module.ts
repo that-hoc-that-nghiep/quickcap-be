@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Category, CategorySchema } from './category.schema';
 import { CategoryController } from './category.controller';
 import { Video, VideoSchema } from 'src/video/video.schema';
+import { RabbitmqModule } from 'src/rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { Video, VideoSchema } from 'src/video/video.schema';
       { name: Category.name, schema: CategorySchema },
       { name: Video.name, schema: VideoSchema },
     ]),
+    RabbitmqModule,
   ],
   providers: [CategoryService, CategoryRepository],
   controllers: [CategoryController],
