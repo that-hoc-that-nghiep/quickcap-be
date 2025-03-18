@@ -287,9 +287,6 @@ export class VideoService {
       }
       video.transcript = transcribeResponse.transcript;
 
-      const categories = await this.categoryRepository.getCategories(orgId);
-      const categoryNames = categories.map((category) => category.name);
-
       const videoDataResponse = (await firstValueFrom(
         this.rabbitmqService.sendMessage<VideoDataRes>(
           { cmd: 'video-data' },
@@ -306,26 +303,22 @@ export class VideoService {
 
       video.title = videoDataResponse.title;
       video.description = videoDataResponse.description;
-      this.logger.log('Create default category');
-      const newCategory = await this.categoryRepository.createCatogory(
-        video.orgId,
-        'Default',
-      );
-      video.categoryId.push(newCategory._id);
-      // if (videoDataResponse.isNewCategory) {
-      //   this.logger.log('Create default category');
-      //   const newCategory = await this.categoryRepository.createCatogory(
-      //     video.orgId,
-      //     'Default',
-      //   );
-      //   video.categoryId.push(newCategory._id);
-      // } else {
-      //   this.logger.log('Is not new category');
-      //   const category = await this.categoryRepository.getCategoryByName(
-      //     videoDataResponse.category,
-      //   );
-      //   video.categoryId.push(category._id);
-      // }
+
+      const categories = await this.categoryRepository.getCategories(orgId);
+      const categoryNames = categories.map((category) => category.name);
+      if (categoryNames.includes('Default')) {
+        this.logger.log('Default category is present');
+        const category =
+          await this.categoryRepository.getCategoryByName('Default');
+        video.categoryId.push(category._id);
+      } else {
+        this.logger.log('Create default category');
+        const newCategory = await this.categoryRepository.createCatogory(
+          video.orgId,
+          'Default',
+        );
+        video.categoryId.push(newCategory._id);
+      }
 
       const savedVideo = await this.saveNewVideo(video);
       this.logger.log('Saved video', savedVideo);
