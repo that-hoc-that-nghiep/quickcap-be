@@ -368,11 +368,28 @@ export class VideoService {
     videoUrl: string,
   ) {
     try {
+      let categoryIds: string[] = [];
+      const categories = await this.categoryRepository.getCategories(orgId);
+      const categoryNames = categories.map((category) => category.name);
+      if (categoryNames.includes('Default')) {
+        this.logger.log('Default category is present');
+        const category =
+          await this.categoryRepository.getCategoryByName('Default');
+        categoryIds.push(category._id);
+      } else {
+        this.logger.log('Create default category');
+        const newCategory = await this.categoryRepository.createCatogory(
+          orgId,
+          'Default',
+        );
+        categoryIds.push(newCategory._id);
+      }
       const s3Url = convertS3Url(videoUrl);
       const newVideo = await this.videoRepository.createVideoWithoutTranscript(
         user,
         orgId,
         videoUrl,
+        categoryIds,
       );
       this.logger.log('Create video', newVideo);
       this.rabbitmqService.emitEvent('check-nsfw', {

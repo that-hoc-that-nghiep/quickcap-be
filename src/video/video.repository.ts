@@ -38,11 +38,13 @@ export class VideoRepository {
     user: UserApp,
     orgId: string,
     source: string,
+    categoryId: string[],
   ): Promise<Video> {
     const video = await this.videoModel.create({
       source,
       user: user,
       orgId,
+      categoryId,
     });
     return video;
   }
