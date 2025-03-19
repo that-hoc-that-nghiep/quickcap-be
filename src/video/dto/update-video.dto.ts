@@ -38,4 +38,8 @@ export class UpdateVideoDto {
   @ApiProperty({ required: false })
   @IsOptional()
   categoryId?: string[];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  orgId?: string;
 }
