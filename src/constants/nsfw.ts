@@ -4,4 +4,5 @@ export enum NSFWType {
   NEUTRAL = 'Neutral',
   PORN = 'Porn',
   SEXY = 'Sexy',
+  VIOLENCE = 'Violence',
 }

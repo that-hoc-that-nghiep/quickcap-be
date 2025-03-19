@@ -8,7 +8,7 @@ export enum ReportType {
 }
 
 export const ReportNSWF: Record<ReportType, NSFWType> = {
-  [ReportType.VIOLENCE]: NSFWType.PORN,
+  [ReportType.VIOLENCE]: NSFWType.VIOLENCE,
   [ReportType.PORNOGRAPHY]: NSFWType.PORN,
   [ReportType.SEXUAL_CONTENT]: NSFWType.SEXY,
   [ReportType.ADULT_ANIME]: NSFWType.HENTAI,
