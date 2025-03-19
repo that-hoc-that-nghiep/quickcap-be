@@ -10,10 +10,14 @@ import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { UserApp } from 'src/constants/user';
 import { OrderVideo, VideoAdds } from 'src/constants/video';
+import { CategoryRepository } from 'src/category/category.repository';
 
 @Injectable()
 export class VideoRepository {
-  constructor(@InjectModel(Video.name) private videoModel: Model<Video>) {}
+  constructor(
+    @InjectModel(Video.name) private videoModel: Model<Video>,
+    private categoryRepository: CategoryRepository,
+  ) {}
 
   async createVideo(
     user: UserApp,
@@ -96,14 +100,72 @@ export class VideoRepository {
   }
 
   async updateVideo(id: string, updateVideoDto: UpdateVideoDto) {
+    const video = await this.getVideoById(id);
+    if (!video) {
+      throw new NotFoundException('Video not found');
+    }
+
+    let orgCategories: any[] = [];
+    if (updateVideoDto.orgId) {
+      orgCategories = await this.categoryRepository.getCategories(
+        updateVideoDto.orgId,
+      );
+    }
+
+    const currentCategoryIds = video.categoryId.map((category) =>
+      category.toString(),
+    );
+
+    const currentOrgCategoryIds = video.categoryId
+      .filter((category) =>
+        orgCategories.some(
+          (orgCategory) => orgCategory._id.toString() === category.toString(),
+        ),
+      )
+      .map((category) => category.toString());
+
+    let updatedCategoryIds = [...currentCategoryIds];
+
+    if (updateVideoDto.categoryId) {
+      const newCategoryIds = updateVideoDto.categoryId.map((id) =>
+        id.toString(),
+      );
+
+      updatedCategoryIds = updatedCategoryIds.filter(
+        (categoryId) =>
+          !currentOrgCategoryIds.includes(categoryId) ||
+          newCategoryIds.includes(categoryId),
+      );
+
+      newCategoryIds.forEach((categoryId) => {
+        if (!updatedCategoryIds.includes(categoryId)) {
+          updatedCategoryIds.push(categoryId);
+        }
+      });
+    }
+    const updateFields: any = {};
+
+    if (updateVideoDto.title) updateFields.title = updateVideoDto.title;
+    if (updateVideoDto.description)
+      updateFields.description = updateVideoDto.description;
+    if (updateVideoDto.like !== undefined)
+      updateFields.like = updateVideoDto.like;
+    if (updateVideoDto.views !== undefined)
+      updateFields.views = updateVideoDto.views;
+
     const updatedVideo = await this.videoModel.findByIdAndUpdate(
       id,
-      { $set: updateVideoDto },
+      {
+        $set: updateFields,
+        $pull: { categoryId: { $in: currentOrgCategoryIds } },
+        $addToSet: { categoryId: { $each: updatedCategoryIds } },
+      },
       {
         new: true,
         runValidators: true,
       },
     );
+
     return await updatedVideo.populate('categoryId');
   }
 
