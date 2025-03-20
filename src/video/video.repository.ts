@@ -223,7 +223,7 @@ export class VideoRepository {
   async removeVideoFromOrg(
     videoId: string,
     orgId: string,
-    categoryId: string[],
+    categoryIds: string[],
   ) {
     const video = await this.getVideoById(videoId);
     if (!video.orgId.includes(orgId)) {
@@ -231,7 +231,7 @@ export class VideoRepository {
         `OrgId ${orgId} does not exist in videoId ${videoId}`,
       );
     }
-    await this.removeCategoryFromVideo(videoId, categoryId);
+    await this.removeCategoryFromVideo(videoId, categoryIds);
     const updateVideo = await this.videoModel.findByIdAndUpdate(
       videoId,
       {

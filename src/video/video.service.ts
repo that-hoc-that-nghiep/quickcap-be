@@ -149,9 +149,15 @@ export class VideoService {
     return { data: updatedVideos, message: 'Video added to org successfully' };
   }
 
-  async deleteVideo(id: string) {
+  async deleteVideo(user: User, id: string, orgId: string) {
     const video = await this.videoRepository.getVideoById(id);
     if (!video) throw new NotFoundException(`Video id ${id} not found`);
+    const org = this.authService.getOrgFromUser(user, orgId);
+    if (!org.is_owner) {
+      throw new BadRequestException(
+        'You are not allowed to remove this video. Only the owner of the organization can remove the video.',
+      );
+    }
     await this.videoRepository.deleteVideo(id);
     return { data: video, message: 'Video deleted successfully' };
   }
