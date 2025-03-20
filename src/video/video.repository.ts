@@ -107,6 +107,38 @@ export class VideoRepository {
     return await updatedVideo.populate('categoryId');
   }
 
+  async addCategoryToVideo(videoId: string, categoryId: string[]) {
+    const video = await this.videoModel.findByIdAndUpdate(
+      videoId,
+      {
+        $addToSet: {
+          categoryId: { $each: categoryId },
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+    return await video.populate('categoryId');
+  }
+
+  async removeCategoryFromVideo(videoId: string, categoryId: string[]) {
+    const video = await this.videoModel.findByIdAndUpdate(
+      videoId,
+      {
+        $pull: {
+          categoryId: { $in: categoryId },
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+    return await video.populate('categoryId');
+  }
+
   async deleteVideo(id: string) {
     const video = await this.videoModel
       .findByIdAndUpdate(
