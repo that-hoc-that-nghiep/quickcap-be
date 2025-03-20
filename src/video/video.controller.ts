@@ -214,14 +214,19 @@ export class VideoController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete video by id' })
-  @ApiParam({ name: 'id', type: 'string', example: '67a4697b778e9debdc6745a1' })
+  @ApiParam({ name: 'id', type: 'string' })
+  @ApiParam({ name: 'orgId', type: 'string' })
   @ApiResponse({
     status: 200,
     description: 'Video deleted successfully',
     type: VideoResponseDto,
   })
-  deleteVideo(@Param('id') id: string) {
-    return this.videoService.deleteVideo(id);
+  deleteVideo(
+    @GetUser() user: User,
+    @Param('id') id: string,
+    @Param('orgId') orgId: string,
+  ) {
+    return this.videoService.deleteVideo(user, id, orgId);
   }
 
   @EventPattern('nsfw-result')
