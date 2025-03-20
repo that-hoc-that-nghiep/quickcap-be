@@ -239,12 +239,20 @@ export class VideoController {
     description: 'Video removed successfully',
     type: VideoResponseDto,
   })
+  @ApiBody({ type: CategoryVideoModifyDto })
   removeVideoFromOrg(
     @GetUser() user: User,
     @Param('id') videoId: string,
     @Param('orgId') orgId: string,
+    @Body() categoryVideoModifyDto: CategoryVideoModifyDto,
   ) {
-    return this.videoService.removeVideoFromOrg(user, videoId, orgId);
+    const { categoryId } = categoryVideoModifyDto;
+    return this.videoService.removeVideoFromOrg(
+      user,
+      videoId,
+      orgId,
+      categoryId,
+    );
   }
 
   @EventPattern('nsfw-result')
