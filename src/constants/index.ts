@@ -21,6 +21,9 @@ export const EnvVariables: Record<string, string> = {
   AUTH_URL: 'AUTH_URL',
   QUEUE_NAME: 'QUEUE_NAME',
   QUEUE_NAME_2: 'QUEUE_NAME_2',
+  CLOUDINARY_NAME: 'CLOUDINARY_NAME',
+  CLOUDINARY_API_KEY: 'CLOUDINARY_API_KEY',
+  CLOUDINARY_API_SECRET: 'CLOUDINARY_API_SECRET',
 };
 
 export enum VideoCategory {
