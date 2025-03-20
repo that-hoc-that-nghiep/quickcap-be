@@ -45,7 +45,7 @@ import { GlobalCacheModule } from './global-module/cache.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>(EnvVariables.DATABASE_URL),
+        uri: configService.get<string>(EnvVariables.DATABASE_LOCAL_URL),
       }),
       inject: [ConfigService],
     }),
