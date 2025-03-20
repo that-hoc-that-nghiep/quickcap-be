@@ -13,6 +13,7 @@ import { AuthModule } from './auth/auth.module';
 import * as Joi from 'joi';
 import { EnvVariables } from './constants';
 import { GlobalCacheModule } from './global-module/cache.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -40,6 +41,9 @@ import { GlobalCacheModule } from './global-module/cache.module';
         AUTH_URL: Joi.string().required(),
         QUEUE_NAME: Joi.string().required(),
         QUEUE_NAME_2: Joi.string().required(),
+        CLOUDINARY_NAME: Joi.string().required(),
+        CLOUDINARY_API_KEY: Joi.string().required(),
+        CLOUDINARY_API_SECRET: Joi.string().required(),
       }),
     }),
     MongooseModule.forRootAsync({
@@ -58,6 +62,7 @@ import { GlobalCacheModule } from './global-module/cache.module';
     MediaModule,
     ConversationModule,
     AuthModule,
+    CloudinaryModule,
   ],
   controllers: [],
   providers: [],

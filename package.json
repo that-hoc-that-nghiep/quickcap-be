@@ -41,11 +41,13 @@
     "cache-manager-redis-yet": "^5.1.5",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "cloudinary": "^2.6.0",
     "joi": "^17.13.3",
     "mongoose": "^8.9.5",
     "nodemailer": "^6.10.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
+    "streamifier": "^0.1.1",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^11.0.5"
   },

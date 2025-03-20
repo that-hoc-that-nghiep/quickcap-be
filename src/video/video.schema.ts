@@ -22,6 +22,10 @@ export class Video {
   description: string;
 
   @ApiProperty()
+  @Prop({ required: false })
+  thumbnail: string;
+
+  @ApiProperty()
   @Prop({ required: true })
   source: string;
 
