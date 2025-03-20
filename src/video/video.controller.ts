@@ -286,4 +286,10 @@ export class VideoController {
       categoryVideoModifyDto.categoryId,
     );
   }
+
+  @Get('analytics/:orgId')
+  @ApiParam({ name: 'orgId', type: 'string' })
+  async getAnalyticsVideosByOrgId(@Param('orgId') orgId: string) {
+    return this.videoService.getAnalyticsVideosByOrgId(orgId);
+  }
 }

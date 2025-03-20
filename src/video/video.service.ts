@@ -399,4 +399,9 @@ export class VideoService {
     );
     return { data: video, message: 'Category removed from video successfully' };
   }
+
+  async getAnalyticsVideosByOrgId(orgId: string) {
+    const videos = await this.videoRepository.getAnalyticsVideosByOrgId(orgId);
+    return { data: videos, message: 'Videos fetched successfully' };
+  }
 }
