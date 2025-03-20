@@ -224,37 +224,6 @@ export class VideoController {
     return this.videoService.deleteVideo(id);
   }
 
-  @Delete(':id/:orgId')
-  @ApiOperation({ summary: 'Remove video from org' })
-  @ApiParam({
-    name: 'id',
-    type: 'string',
-  })
-  @ApiParam({
-    name: 'orgId',
-    type: 'string',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Video removed successfully',
-    type: VideoResponseDto,
-  })
-  @ApiBody({ type: CategoryVideoModifyDto })
-  removeVideoFromOrg(
-    @GetUser() user: User,
-    @Param('id') videoId: string,
-    @Param('orgId') orgId: string,
-    @Body() categoryVideoModifyDto: CategoryVideoModifyDto,
-  ) {
-    const { categoryId } = categoryVideoModifyDto;
-    return this.videoService.removeVideoFromOrg(
-      user,
-      videoId,
-      orgId,
-      categoryId,
-    );
-  }
-
   @EventPattern('nsfw-result')
   handleCheckNsfw(data: ResultNSFWRes) {
     try {
@@ -299,5 +268,36 @@ export class VideoController {
   @ApiParam({ name: 'orgId', type: 'string' })
   async getAnalyticsVideosByOrgId(@Param('orgId') orgId: string) {
     return this.videoService.getAnalyticsVideosByOrgId(orgId);
+  }
+
+  @Patch('remove/:id/:orgId')
+  @ApiOperation({ summary: 'Remove video from org' })
+  @ApiParam({
+    name: 'id',
+    type: 'string',
+  })
+  @ApiParam({
+    name: 'orgId',
+    type: 'string',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Video removed successfully',
+    type: VideoResponseDto,
+  })
+  @ApiBody({ type: CategoryVideoModifyDto })
+  removeVideoFromOrg(
+    @GetUser() user: User,
+    @Param('id') videoId: string,
+    @Param('orgId') orgId: string,
+    @Body() categoryVideoModifyDto: CategoryVideoModifyDto,
+  ) {
+    const { categoryId } = categoryVideoModifyDto;
+    return this.videoService.removeVideoFromOrg(
+      user,
+      videoId,
+      orgId,
+      categoryId,
+    );
   }
 }
