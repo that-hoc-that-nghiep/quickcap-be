@@ -212,7 +212,7 @@ export class VideoController {
     this.videoService.updateVideo(userId, id, updateVideoDto);
   }
 
-  @Delete(':id')
+  @Delete(':id/:orgId')
   @ApiOperation({ summary: 'Delete video by id' })
   @ApiParam({ name: 'id', type: 'string' })
   @ApiParam({ name: 'orgId', type: 'string' })
