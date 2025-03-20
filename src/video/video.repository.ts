@@ -302,4 +302,18 @@ export class VideoRepository {
       totalView,
     };
   }
+
+  async uploadThumbnail(videoId: string, url: string) {
+    const updateVideo = await this.videoModel.findByIdAndUpdate(
+      videoId,
+      {
+        $set: { thumbnail: url },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+    return updateVideo;
+  }
 }

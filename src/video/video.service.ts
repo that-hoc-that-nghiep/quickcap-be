@@ -416,4 +416,11 @@ export class VideoService {
     const videos = await this.videoRepository.getAnalyticsVideosByOrgId(orgId);
     return { data: videos, message: 'Videos fetched successfully' };
   }
+  async uploadThumbnail(videoId: string, url: string) {
+    const updateVideo = await this.videoRepository.uploadThumbnail(
+      videoId,
+      url,
+    );
+    return { data: updateVideo, message: 'Thumbnail uploaded successfully' };
+  }
 }

@@ -35,17 +35,17 @@ import { VideoResponseDto } from './dto/video-res.dto';
 import { VideosResponseDto } from './dto/videos-res.dto';
 import { EventPattern } from '@nestjs/microservices';
 import { ResultNSFWRes } from './dto/result-nsfw.res';
-import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
 import { AddVideoToOrgDto } from './dto/add-to-org.dto';
 import { CategoryVideoModifyDto } from './dto/category-video-modify.dto';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @ApiTags('Video')
 @ApiSecurity('token')
 @Controller('video')
 export class VideoController {
   constructor(
-    private readonly rabbitmqService: RabbitmqService,
     private videoService: VideoService,
+    private CloudinaryService: CloudinaryService,
   ) {}
   private readonly logger = new Logger(VideoController.name);
   @Post()
@@ -96,6 +96,62 @@ export class VideoController {
     ).id;
 
     const res = await this.videoService.uploadVideo(user, orgId, file);
+    return res;
+  }
+
+  @ApiOperation({
+    summary: 'Upload thumbnail',
+  })
+  @Post('thumbnail/:videoId')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (req, file, callback) => {
+        if (!file.mimetype.match(/^image\/(jpeg|png|gif|webp)$/)) {
+          return callback(
+            new BadRequestException('Only image files are allowed!'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024, // Giới hạn kích thước 5MB
+      },
+    }),
+  )
+  @ApiResponse({
+    status: 201,
+    description: 'Video uploaded successfully',
+    type: VideoResponseDto,
+  })
+  async uploadThumbnail(
+    @Param('videoId') videoId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const resCloudinary = (await this.CloudinaryService.uploadThumbnail(
+      file,
+    )) as {
+      data: string;
+      url?: string;
+      message: string;
+    };
+    const res = await this.videoService.uploadThumbnail(
+      videoId,
+      resCloudinary.data as string,
+    );
     return res;
   }
 

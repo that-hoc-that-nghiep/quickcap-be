@@ -7,6 +7,7 @@ import { VideoRepository } from './video.repository';
 import { CategoryModule } from 'src/category/category.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { RabbitmqModule } from 'src/rabbitmq/rabbitmq.module';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { RabbitmqModule } from 'src/rabbitmq/rabbitmq.module';
     CategoryModule,
     AuthModule,
     RabbitmqModule,
+    CloudinaryModule,
   ],
   controllers: [VideoController],
   providers: [VideoService, VideoRepository],
