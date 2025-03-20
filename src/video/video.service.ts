@@ -144,35 +144,6 @@ export class VideoService {
     return { data: updateVideo, message: 'Video updated successfully' };
   }
 
-  // async AddVideoToOrg(user: User, videoId: string, orgCategories: OrgCategory[]) {
-  //   await this.videoRepository.checkVideoOwner(user.id, videoId);
-  //   const orgUser = this.authService.getOrgFromUser(user, orgId);
-  //   if (orgUser.type === OrgType.PERSONAL) {
-  //     throw new BadRequestException(
-  //       'You are not allowed to tranfer this video to org type PERSONAL.You only can tranfer the video from org type ORGANIZATION',
-  //     );
-  //   }
-  //   if (
-  //     orgUser.is_owner ||
-  //     orgUser.is_permission === UserPermission.UPLOAD ||
-  //     orgUser.is_permission === UserPermission.ALL
-  //   ) {
-  //     const updateVideo =
-  //       await this.videoRepository.updateVideoOrgIdsCategoryIds(videoId, orgId);
-  //     return {
-  //       data: updateVideo,
-  //       message: `Add VideoId ${videoId} to orgId ${orgId} successfully`,
-  //     };
-  //   } else if (
-  //     !orgUser.is_owner ||
-  //     orgUser.is_permission === UserPermission.READ
-  //   ) {
-  //     throw new BadRequestException(
-  //       'You are not allowed to tranfer this video. Only the owner of the organization and user has permission UPLOAD can tranfer the video.',
-  //     );
-  //   }
-  // }
-
   async AddVideoToOrg(videoAdds: VideoAdds[]) {
     const updatedVideos = await this.videoRepository.AddVideoToOrg(videoAdds);
     return { data: updatedVideos, message: 'Video added to org successfully' };
@@ -181,17 +152,7 @@ export class VideoService {
   async deleteVideo(id: string) {
     const video = await this.videoRepository.getVideoById(id);
     if (!video) throw new NotFoundException(`Video id ${id} not found`);
-    // const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
-    // try {
-    // const deleteCommand = new DeleteObjectCommand({
-    //   Bucket,
-    //   Key: video.source,
-    // });
-    // await this.s3.send(deleteCommand);
     await this.videoRepository.deleteVideo(id);
-    // } catch (e) {
-    //   throw new InternalServerErrorException('Error deleting video on aws S3');
-    // }
     return { data: video, message: 'Video deleted successfully' };
   }
 
@@ -216,11 +177,6 @@ export class VideoService {
       message: `VideoId ${videoId} removed from orgId ${orgId} successfull`,
     };
   }
-
-  // async test(userId: string, orgId: string, testDto: TestDto) {
-  //   const { videoUrl } = testDto;
-  //   return await this.transcriptAndProcess(userId, orgId, videoUrl);
-  // }
 
   async transcribeVideo(userId: string, orgId: string, videoUrl: string) {
     const s3Url = convertS3Url(videoUrl);
@@ -428,31 +384,19 @@ export class VideoService {
     return { data: videos, message: 'Videos fetched successfully' };
   }
 
-  // async suggestCategoryVideoByAi(videoId: string, orgId: string) {
-  //   this.logger.log(`Prossing suggest category for videoId ${videoId}`);
-  //   const categories = await this.categoryRepository.getCategories(orgId);
-  //   const categoryNames = categories.map((category) => category.name);
-  //   const video = await this.videoRepository.getVideoById(videoId);
-  //   try {
-  //     await this.rabbitmqService.ensureConnection();
-  //     this.logger.log('Starting suggest category by ai');
-  //     const resCategorySuggest = (await firstValueFrom(
-  //       this.rabbitmqService.sendMessage<CategorySuggestRes>(
-  //         { cmd: 'category-suggest' },
-  //         {
-  //           transcript: video.transcript,
-  //           categories: categoryNames,
-  //         },
-  //       ),
-  //     )) as CategorySuggestRes;
-  //     this.logger.log('Finished suggest category by ai');
-  //     return {
-  //       data: resCategorySuggest,
-  //       message: 'Category suggested by ai successfully',
-  //     };
-  //   } catch (error) {
-  //     this.logger.error(`Error in suggest category by ai:`, error);
-  //     throw new InternalServerErrorException('Error processing video');
-  //   }
-  // }
+  async addCategoryToVideo(videoId: string, categoryId: string[]) {
+    const video = await this.videoRepository.addCategoryToVideo(
+      videoId,
+      categoryId,
+    );
+    return { data: video, message: 'Category added to video successfully' };
+  }
+
+  async removeCategoryFromVideo(videoId: string, categoryId: string[]) {
+    const video = await this.videoRepository.removeCategoryFromVideo(
+      videoId,
+      categoryId,
+    );
+    return { data: video, message: 'Category removed from video successfully' };
+  }
 }

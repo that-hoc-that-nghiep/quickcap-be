@@ -37,6 +37,7 @@ import { EventPattern } from '@nestjs/microservices';
 import { ResultNSFWRes } from './dto/result-nsfw.res';
 import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
 import { AddVideoToOrgDto } from './dto/add-to-org.dto';
+import { CategoryVideoModifyDto } from './dto/category-video-modify.dto';
 
 @ApiTags('Video')
 @ApiSecurity('token')
@@ -97,24 +98,6 @@ export class VideoController {
     const res = await this.videoService.uploadVideo(user, orgId, file);
     return res;
   }
-
-  // @Post('suggest/:videoId/:orgId')
-  // @ApiOperation({
-  //   summary: 'Suggest category for video',
-  // })
-  // @ApiParam({ name: 'videoId', type: 'string', required: true })
-  // @ApiParam({ name: 'orgId', type: 'string', required: true })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Category suggested by ai successfully',
-  //   type: CategorySuggestRes,
-  // })
-  // async suggestCategoryVideoByAi(
-  //   @Param('videoId') videoId: string,
-  //   @Param('orgId') orgId: string,
-  // ) {
-  //   return this.videoService.suggestCategoryVideoByAi(videoId, orgId);
-  // }
 
   @Get('all/:orgId')
   @ApiOperation({ summary: 'Get all videos' })
@@ -264,56 +247,6 @@ export class VideoController {
     return this.videoService.removeVideoFromOrg(user, videoId, orgId);
   }
 
-  // @Post('test/:orgId')
-  // @ApiOperation({ summary: 'Test' })
-  // @ApiBody({
-  //   type: TestDto,
-  //   examples: {
-  //     video_1: {
-  //       value: {
-  //         videoUrl: 'bao2.mp4',
-  //       },
-  //     },
-  //   },
-  // })
-  // @ApiParam({
-  //   name: 'orgId',
-  //   type: 'string',
-  //   example: 'f8a709c8-5787-44fa-993e-21f3d5b46804',
-  // })
-  // test(
-  //   @GetUser('id') userId: string,
-  //   @Param('orgId') orgId: string,
-  //   @Body() testDto: TestDto,
-  // ) {
-  //   return this.videoService.test(userId, orgId, testDto);
-  // }
-
-  // @EventPattern('transcribe-result')
-  // async handleProcessVideoData(data: TranscribeRes) {
-  //   try {
-  //     await this.rabbitmqService.ensureConnection();
-  //     if (!data.transcript) {
-  //       this.logger.log('Unable to receive transcript, stopping processing.');
-  //       await this.videoService.saveNewVideoWithouttranscript(
-  //         data.userId,
-  //         data.orgId,
-  //         data.videoUrl,
-  //       );
-  //     } else {
-  //       await this.videoService.processVideoData(
-  //         data.userId,
-  //         data.orgId,
-  //         data.videoUrl,
-  //         data.transcript,
-  //       );
-  //     }
-  //   } catch (error) {
-  //     this.logger.error(`Error process video data:`, error);
-  //     throw new InternalServerErrorException('Error video data');
-  //   }
-  // }
-
   @EventPattern('nsfw-result')
   handleCheckNsfw(data: ResultNSFWRes) {
     try {
@@ -328,8 +261,29 @@ export class VideoController {
     }
   }
 
-  // @Post('testtt/testt')
-  // testt() {
-  //   return this.videoService.updateNswf();
-  // }
+  @Patch('modify/:id/add')
+  @ApiParam({ name: 'id', type: 'string' })
+  @ApiBody({ type: CategoryVideoModifyDto })
+  async addCategoryToVideo(
+    @Param('id') id: string,
+    @Body() categoryVideoModifyDto: CategoryVideoModifyDto,
+  ) {
+    return this.videoService.addCategoryToVideo(
+      id,
+      categoryVideoModifyDto.categoryId,
+    );
+  }
+
+  @Patch('modify/:id/remove')
+  @ApiParam({ name: 'id', type: 'string' })
+  @ApiBody({ type: CategoryVideoModifyDto })
+  async removeCategoryToVideo(
+    @Param('id') id: string,
+    @Body() categoryVideoModifyDto: CategoryVideoModifyDto,
+  ) {
+    return this.videoService.removeCategoryFromVideo(
+      id,
+      categoryVideoModifyDto.categoryId,
+    );
+  }
 }
