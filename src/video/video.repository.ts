@@ -220,13 +220,18 @@ export class VideoRepository {
     return updateVideo;
   }
 
-  async removeVideoFromOrg(videoId: string, orgId: string) {
+  async removeVideoFromOrg(
+    videoId: string,
+    orgId: string,
+    categoryId: string[],
+  ) {
     const video = await this.getVideoById(videoId);
     if (!video.orgId.includes(orgId)) {
       throw new BadRequestException(
         `OrgId ${orgId} does not exist in videoId ${videoId}`,
       );
     }
+    await this.removeCategoryFromVideo(videoId, categoryId);
     const updateVideo = await this.videoModel.findByIdAndUpdate(
       videoId,
       {
