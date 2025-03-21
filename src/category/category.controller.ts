@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  InternalServerErrorException,
+  Logger,
+  Param,
+  Post,
+} from '@nestjs/common';
 import {
   ApiBody,
   ApiOperation,
@@ -19,6 +28,8 @@ import { CreateCategorySuggestDto } from './dto/create-category-suggest.dto';
 @Controller('category')
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
+
+  private logger = new Logger(CategoryController.name);
   @Post(':orgId')
   @ApiOperation({ summary: 'Create a new category' })
   @ApiBody({
@@ -46,7 +57,12 @@ export class CategoryController {
     @Param('orgId') orgId: string,
     @Body() createCategoryDto: CreateCategoryDto,
   ) {
-    return this.categoryService.createCategory(orgId, createCategoryDto);
+    try {
+      return this.categoryService.createCategory(orgId, createCategoryDto);
+    } catch (error) {
+      this.logger.error('Error create category');
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @Post('suggest/:orgId')
@@ -66,8 +82,13 @@ export class CategoryController {
     @Param('orgId') orgId: string,
     @Body() createCategorySuggestDto: CreateCategorySuggestDto,
   ) {
-    const { transcript } = createCategorySuggestDto;
-    return this.categoryService.suggestCategoryVideoByAi(orgId, transcript);
+    try {
+      const { transcript } = createCategorySuggestDto;
+      return this.categoryService.suggestCategoryVideoByAi(orgId, transcript);
+    } catch (error) {
+      this.logger.error('Error suggest category');
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @ApiOperation({ summary: 'Get a category by id' })
@@ -78,7 +99,12 @@ export class CategoryController {
     type: CategoryResponseDto,
   })
   getCategoryByID(@Param('id') id: string) {
-    return this.categoryService.getCategoryByID(id);
+    try {
+      return this.categoryService.getCategoryByID(id);
+    } catch (error) {
+      this.logger.error('Error get category by id');
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @ApiOperation({ summary: 'Get all categories' })
@@ -90,7 +116,12 @@ export class CategoryController {
   })
   @ApiParam({ name: 'orgId', type: 'string' })
   getCategories(@Param('orgId') orgId: string) {
-    return this.categoryService.getCategories(orgId);
+    try {
+      return this.categoryService.getCategories(orgId);
+    } catch (error) {
+      this.logger.error('Error get all categories');
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @ApiOperation({ summary: 'Delete a category by id' })
@@ -101,6 +132,11 @@ export class CategoryController {
     type: CategoryResponseDto,
   })
   deleteCategory(@Param('id') id: string) {
-    return this.categoryService.deleteCategory(id);
+    try {
+      return this.categoryService.deleteCategory(id);
+    } catch (error) {
+      this.logger.error('Error delete category');
+      throw new InternalServerErrorException(error);
+    }
   }
 }
