@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  InternalServerErrorException,
+  Logger,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { ConversationService } from './conversation.service';
 import {
   ApiBody,
@@ -15,7 +23,7 @@ import { ConversationsResDto } from './dto/conversations-res.dto';
 @ApiSecurity('token')
 export class ConversationController {
   constructor(private conversationService: ConversationService) {}
-
+  private logger = new Logger(ConversationController.name);
   @Post(':videoId')
   @ApiOperation({ summary: 'Create conversation' })
   @ApiParam({ name: 'videoId', type: 'string' })
@@ -35,11 +43,16 @@ export class ConversationController {
     @Param('videoId') videoId: string,
     @Body() createConversationDto: CreateConversationDto,
   ) {
-    return this.conversationService.createConversation(
-      userId,
-      videoId,
-      createConversationDto.question,
-    );
+    try {
+      return this.conversationService.createConversation(
+        userId,
+        videoId,
+        createConversationDto.question,
+      );
+    } catch (error) {
+      this.logger.error('Error create conversation');
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @Get(':videoId')
@@ -50,6 +63,11 @@ export class ConversationController {
     @GetUser('id') userId: string,
     @Param('videoId') videoId: string,
   ) {
-    return this.conversationService.getConversations(userId, videoId);
+    try {
+      return this.conversationService.getConversations(userId, videoId);
+    } catch (error) {
+      this.logger.error('Error get conversations');
+      throw new InternalServerErrorException(error);
+    }
   }
 }

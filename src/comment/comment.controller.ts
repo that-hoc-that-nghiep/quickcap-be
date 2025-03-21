@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  InternalServerErrorException,
+  Logger,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { ApiOperation, ApiResponse, ApiSecurity } from '@nestjs/swagger';
 import { GetUser } from 'src/decorators/get-user.decorator';
@@ -11,7 +20,7 @@ import { User } from 'src/constants/user';
 @Controller('comment')
 export class CommentController {
   constructor(private commentService: CommentService) {}
-
+  private logger = new Logger(CommentController.name);
   @Post(':videoId')
   @ApiOperation({ summary: 'Create a comment' })
   @ApiResponse({
@@ -24,9 +33,14 @@ export class CommentController {
     @GetUser() user: User,
     @Body() createCommentDto: CreateCommentDto,
   ) {
-    const { content } = createCommentDto;
-    const comment = this.commentService.createComment(videoId, user, content);
-    return comment;
+    try {
+      const { content } = createCommentDto;
+      const comment = this.commentService.createComment(videoId, user, content);
+      return comment;
+    } catch (error) {
+      this.logger.error('Error create comment');
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @Get(':videoId')
@@ -37,8 +51,13 @@ export class CommentController {
     type: CommentsResDto,
   })
   getCommentsByVideoId(@Param('videoId') videoId: string) {
-    const comments = this.commentService.getCommentsByVideoId(videoId);
-    return comments;
+    try {
+      const comments = this.commentService.getCommentsByVideoId(videoId);
+      return comments;
+    } catch (error) {
+      this.logger.error('Error get comments by videoId');
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @Delete(':id')
@@ -49,7 +68,12 @@ export class CommentController {
     type: CommentResDto,
   })
   deleteCommentById(@Param('id') id: string) {
-    const comment = this.commentService.deleteCommentById(id);
-    return comment;
+    try {
+      const comment = this.commentService.deleteCommentById(id);
+      return comment;
+    } catch (error) {
+      this.logger.error('Error delete comment');
+      throw new InternalServerErrorException(error);
+    }
   }
 }

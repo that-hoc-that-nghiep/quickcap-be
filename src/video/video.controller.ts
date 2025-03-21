@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  InternalServerErrorException,
   Logger,
   Param,
   ParseIntPipe,
@@ -91,12 +92,16 @@ export class VideoController {
     @GetUser() user: User,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const orgId = user.organizations.find(
-      (org) => org.type === OrgType.PERSONAL,
-    ).id;
-
-    const res = await this.videoService.uploadVideo(user, orgId, file);
-    return res;
+    try {
+      const orgId = user.organizations.find(
+        (org) => org.type === OrgType.PERSONAL,
+      ).id;
+      const res = await this.videoService.uploadVideo(user, orgId, file);
+      return res;
+    } catch (error) {
+      this.logger.error('Error uploading video', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @ApiOperation({
@@ -141,18 +146,23 @@ export class VideoController {
     @Param('videoId') videoId: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const resCloudinary = (await this.CloudinaryService.uploadThumbnail(
-      file,
-    )) as {
-      data: string;
-      url?: string;
-      message: string;
-    };
-    const res = await this.videoService.uploadThumbnail(
-      videoId,
-      resCloudinary.data as string,
-    );
-    return res;
+    try {
+      const resCloudinary = (await this.CloudinaryService.uploadThumbnail(
+        file,
+      )) as {
+        data: string;
+        url?: string;
+        message: string;
+      };
+      const res = await this.videoService.uploadThumbnail(
+        videoId,
+        resCloudinary.data as string,
+      );
+      return res;
+    } catch (error) {
+      this.logger.error('Error uploading thumbnail', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @Get('all/:orgId')
@@ -193,7 +203,12 @@ export class VideoController {
     type: VideoResponseDto,
   })
   getVideoById(@GetUser() user: User, @Param('id') id: string) {
-    return this.videoService.getVideoById(user, id);
+    try {
+      return this.videoService.getVideoById(user, id);
+    } catch (error) {
+      this.logger.error('Error get video by id', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @Get('unique/:orgId')
@@ -207,7 +222,12 @@ export class VideoController {
     const orgIdPersonal: string = user.organizations.find(
       (org) => org.type === OrgType.PERSONAL,
     ).id;
-    return this.videoService.getVideosUnique(orgIdPersonal, orgId);
+    try {
+      return this.videoService.getVideosUnique(orgIdPersonal, orgId);
+    } catch (error) {
+      this.logger.error('Error get unique videos', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @Patch('addToOrg')
@@ -221,51 +241,13 @@ export class VideoController {
     type: VideoResponseDto,
   })
   async AddVideoToOrg(@Body() addVideoToOrgDto: AddVideoToOrgDto) {
-    const { videoAdds } = addVideoToOrgDto;
-    return this.videoService.AddVideoToOrg(videoAdds);
-  }
-
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update video by id' })
-  @ApiParam({ name: 'id', type: 'string', example: '67a4697b778e9debdc6745a1' })
-  @ApiBody({
-    type: UpdateVideoDto,
-    examples: {
-      video_1: {
-        value: {
-          title: 'this is title',
-          description:
-            'the action of providing or supplying something for use.',
-          summary: 'this is summary',
-          views: 0,
-          type: VideoType.PRIVATE,
-          categoryId: ['67a357027044f67fd112f501', '67a461334e30fba0ac5103f8'],
-        },
-      },
-      video_2: {
-        value: {
-          title: 'this is title',
-          description:
-            'the action of providing or supplying something for use.',
-          summary: 'this is summary',
-          views: 0,
-          type: VideoType.PUBLIC,
-          categoryId: ['67a357027044f67fd112f501', '67a461334e30fba0ac5103f8'],
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Video updated successfully',
-    type: VideoResponseDto,
-  })
-  updateVideo(
-    @GetUser('id') userId: string,
-    @Param('id') id: string,
-    @Body() updateVideoDto: UpdateVideoDto,
-  ) {
-    this.videoService.updateVideo(userId, id, updateVideoDto);
+    try {
+      const { videoAdds } = addVideoToOrgDto;
+      return this.videoService.AddVideoToOrg(videoAdds);
+    } catch (error) {
+      this.logger.error('Error adding video to org', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @Delete(':id/:orgId')
@@ -282,7 +264,12 @@ export class VideoController {
     @Param('id') id: string,
     @Param('orgId') orgId: string,
   ) {
-    return this.videoService.deleteVideo(user, id, orgId);
+    try {
+      return this.videoService.deleteVideo(user, id, orgId);
+    } catch (error) {
+      this.logger.error('Error deleting video', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @EventPattern('nsfw-result')
@@ -306,10 +293,15 @@ export class VideoController {
     @Param('id') id: string,
     @Body() categoryVideoModifyDto: CategoryVideoModifyDto,
   ) {
-    return this.videoService.addCategoryToVideo(
-      id,
-      categoryVideoModifyDto.categoryId,
-    );
+    try {
+      return this.videoService.addCategoryToVideo(
+        id,
+        categoryVideoModifyDto.categoryId,
+      );
+    } catch (error) {
+      this.logger.error('Error adding category to video', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @Patch('modify/:id/remove')
@@ -319,46 +311,85 @@ export class VideoController {
     @Param('id') id: string,
     @Body() categoryVideoModifyDto: CategoryVideoModifyDto,
   ) {
-    return this.videoService.removeCategoryFromVideo(
-      id,
-      categoryVideoModifyDto.categoryId,
-    );
+    try {
+      return this.videoService.removeCategoryFromVideo(
+        id,
+        categoryVideoModifyDto.categoryId,
+      );
+    } catch (error) {
+      this.logger.error('Error removing category to video', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @Get('analytics/:orgId')
   @ApiParam({ name: 'orgId', type: 'string' })
   async getAnalyticsVideosByOrgId(@Param('orgId') orgId: string) {
-    return this.videoService.getAnalyticsVideosByOrgId(orgId);
+    try {
+      return this.videoService.getAnalyticsVideosByOrgId(orgId);
+    } catch (error) {
+      this.logger.error('Error get analytics videos by orgId', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
-  @Patch('remove/:id/:orgId')
-  @ApiOperation({ summary: 'Remove video from org' })
-  @ApiParam({
-    name: 'id',
-    type: 'string',
-  })
-  @ApiParam({
-    name: 'orgId',
-    type: 'string',
+  
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update video by id' })
+  @ApiParam({ name: 'id', type: 'string', example: '67a4697b778e9debdc6745a1' })
+  @ApiBody({
+    type: UpdateVideoDto,
   })
   @ApiResponse({
     status: 200,
-    description: 'Video removed successfully',
+    description: 'Video updated successfully',
     type: VideoResponseDto,
   })
-  @ApiBody({ type: CategoryVideoModifyDto })
-  removeVideoFromOrg(
-    @GetUser() user: User,
-    @Param('id') videoId: string,
-    @Param('orgId') orgId: string,
-    @Body() categoryVideoModifyDto: CategoryVideoModifyDto,
+  updateVideo(
+    @GetUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() updateVideoDto: UpdateVideoDto,
   ) {
-    const { categoryId } = categoryVideoModifyDto;
-    return this.videoService.removeVideoFromOrg(
-      user,
-      videoId,
-      orgId,
-      categoryId,
-    );
+    try {
+      this.videoService.updateVideo(userId, id, updateVideoDto);
+    } catch (error) {
+      this.logger.error('Error updating video', error);
+      throw new InternalServerErrorException(error);
+    }
   }
+  // @Patch('remove/:id/:orgId')
+  // @ApiOperation({ summary: 'Remove video from org' })
+  // @ApiParam({
+  //   name: 'id',
+  //   type: 'string',
+  // })
+  // @ApiParam({
+  //   name: 'orgId',
+  //   type: 'string',
+  // })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Video removed successfully',
+  //   type: VideoResponseDto,
+  // })
+  // @ApiBody({ type: CategoryVideoModifyDto })
+  // removeVideoFromOrg(
+  //   @GetUser() user: User,
+  //   @Param('id') videoId: string,
+  //   @Param('orgId') orgId: string,
+  //   @Body() categoryVideoModifyDto: CategoryVideoModifyDto,
+  // ) {
+  //   try {
+  //     const { categoryId } = categoryVideoModifyDto;
+  //     return this.videoService.removeVideoFromOrg(
+  //       user,
+  //       videoId,
+  //       orgId,
+  //       categoryId,
+  //     );
+  //   } catch (error) {
+  //     this.logger.error('Error removing video from org', error);
+  //     throw new InternalServerErrorException(error);
+  //   }
+  // }
 }

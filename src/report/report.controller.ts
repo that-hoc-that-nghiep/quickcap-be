@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  InternalServerErrorException,
+  Logger,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ReportService } from './report.service';
 import { GetUser } from 'src/decorators/get-user.decorator';
 import { User } from 'src/constants/user';
@@ -19,7 +28,7 @@ import { AcceptReportDto } from './dto/accept-report.dto';
 @Controller('report')
 export class ReportController {
   constructor(private reportService: ReportService) {}
-
+  private logger = new Logger(ReportController.name);
   @ApiOperation({ summary: 'Create report' })
   @ApiParam({ name: 'videoId', type: String })
   @ApiBody({
@@ -58,15 +67,25 @@ export class ReportController {
     @Param('videoId') videoId: string,
     @Body() createReportDto: CreateReportDto,
   ) {
-    const { type, content } = createReportDto;
-    return this.reportService.createReport(user, videoId, type, content);
+    try {
+      const { type, content } = createReportDto;
+      return this.reportService.createReport(user, videoId, type, content);
+    } catch (error) {
+      this.logger.error('Error creating report', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @ApiOperation({ summary: 'Get all reports' })
   @ApiResponse({ type: ReportsRes })
   @Get('all')
   async getAllReports() {
-    return this.reportService.getAllReports();
+    try {
+      return this.reportService.getAllReports();
+    } catch (error) {
+      this.logger.error('Error getting all reports', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @ApiOperation({ summary: 'Get all reports by videoId' })
@@ -74,7 +93,12 @@ export class ReportController {
   @ApiResponse({ type: ReportsRes })
   @Get('all/:videoId')
   async getAllReportsByVideoId(@Param('videoId') videoId: string) {
-    return this.reportService.getReportsByVideoId(videoId);
+    try {
+      return this.reportService.getReportsByVideoId(videoId);
+    } catch (error) {
+      this.logger.error('Error getting all reports by videoId', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @ApiOperation({ summary: 'Get report by id' })
@@ -82,7 +106,12 @@ export class ReportController {
   @ApiResponse({ type: ReportsRes })
   @Get(':id')
   async getReportsByVideoId(@Param('id') id: string) {
-    return this.reportService.getReportById(id);
+    try {
+      return this.reportService.getReportById(id);
+    } catch (error) {
+      this.logger.error('Error getting report by id', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   @ApiOperation({ summary: 'Accept report' })
@@ -94,6 +123,11 @@ export class ReportController {
     @Param('id') reportId: string,
     @Param('videoId') videoId: string,
   ) {
-    return this.reportService.acceptReport(reportId, videoId);
+    try {
+      return this.reportService.acceptReport(reportId, videoId);
+    } catch (error) {
+      this.logger.error('Error accepting report', error);
+      throw new InternalServerErrorException(error);
+    }
   }
 }
