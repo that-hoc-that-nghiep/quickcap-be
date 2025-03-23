@@ -163,22 +163,10 @@ export class VideoService {
   }
 
   async removeVideoFromOrg(
-    user: User,
     videoId: string,
     orgId: string,
     categoryId: string[],
   ) {
-    const org = this.authService.getOrgFromUser(user, orgId);
-    // if (org.type === OrgType.PERSONAL) {
-    //   throw new BadRequestException(
-    //     'You are not allowed to remove this video from org type PERSONAL. You only can remove the video from org type ORGANIZATION.',
-    //   );
-    // }
-    if (!org.is_owner) {
-      throw new BadRequestException(
-        'You are not allowed to remove this video. Only the owner of the organization can remove the video.',
-      );
-    }
     const videoRemoved = await this.videoRepository.removeVideoFromOrg(
       videoId,
       orgId,
