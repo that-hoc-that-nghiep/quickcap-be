@@ -130,13 +130,13 @@ export class VideoService {
     id: string,
     updateVideoDto: UpdateVideoDto,
   ) {
-    const { categoryId } = updateVideoDto;
-    await this.categoryRepository.getCategoryByArrayId(categoryId);
-    const video = await this.videoRepository.getVideoById(id);
-    if (video.user.id !== userId)
-      throw new InternalServerErrorException(
-        'You are not allowed to update this video. Only the creator can update the video.',
-      );
+    // const { categoryId } = updateVideoDto;
+    // await this.categoryRepository.getCategoryByArrayId(categoryId);
+    // const video = await this.videoRepository.getVideoById(id);
+    // if (video.user.id !== userId)
+    //   throw new InternalServerErrorException(
+    //     'You are not allowed to update this video. Only the creator can update the video.',
+    //   );
     const updateVideo = await this.videoRepository.updateVideo(
       id,
       updateVideoDto,
