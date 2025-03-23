@@ -34,12 +34,4 @@ export class UpdateVideoDto {
 
   @ApiProperty({ required: false })
   nsfwType?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  categoryId?: string[];
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  orgId?: string;
 }
