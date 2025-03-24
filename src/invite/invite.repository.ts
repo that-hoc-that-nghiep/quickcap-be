@@ -31,6 +31,11 @@ export class InviteRepository {
     return invite;
   }
 
+  async getInvitesByOrgIdAndReceiverId(orgId: string, receiverId: string) {
+    const invites = await this.inviteModel.find({ orgId, receiverId }).exec();
+    return invites;
+  }
+
   async updateInvite(id: string, accepted: boolean): Promise<Invite> {
     const invite = await this.inviteModel
       .findByIdAndUpdate(id, { $set: { accepted: accepted } }, { new: true })
