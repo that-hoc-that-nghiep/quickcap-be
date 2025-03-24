@@ -16,6 +16,7 @@ import {
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { User } from 'src/constants/user';
 import { InviteResDto } from './dto/invite-res.dto';
+import { InvitesResDto } from './dto/invites-res.dto';
 
 @ApiTags('Invite')
 @ApiSecurity('token')
@@ -57,6 +58,20 @@ export class InviteController {
   })
   async getInviteById(@Param('id') id: string) {
     return this.inviteService.getInviteById(id);
+  }
+
+  @Get('all/:orgId/:receiverId')
+  @ApiOperation({ summary: 'Get invites by orgId and receiverId' })
+  @ApiResponse({
+    status: 200,
+    description: 'Invites fetched successfully',
+    type: [InvitesResDto],
+  })
+  async getInvitesByOrgIdAndReceiverId(
+    @Param('orgId') orgId: string,
+    @Param('receiverId') receiverId: string,
+  ) {
+    return this.inviteService.getInvitesByOrgIdAndReceiverId(orgId, receiverId);
   }
 
   @Patch(':id')

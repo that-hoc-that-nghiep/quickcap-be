@@ -98,4 +98,12 @@ Invite Link: ${inviteLink}`,
     const inviteAccepted = await this.inviteRepository.updateInvite(id, true);
     return { data: inviteAccepted, message: 'Invite accepted successfully' };
   }
+
+  async getInvitesByOrgIdAndReceiverId(orgId: string, receiverId: string) {
+    const invites = await this.inviteRepository.getInvitesByOrgIdAndReceiverId(
+      orgId,
+      receiverId,
+    );
+    return { data: invites, message: 'Invites fetched successfully' };
+  }
 }
