@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -53,7 +54,7 @@ export class CategoryController {
     type: CategoryResponseDto,
   })
   @ApiParam({ name: 'orgId', type: 'string' })
-  createCategory(
+  async createCategory(
     @Param('orgId') orgId: string,
     @Body() createCategoryDto: CreateCategoryDto,
   ) {
