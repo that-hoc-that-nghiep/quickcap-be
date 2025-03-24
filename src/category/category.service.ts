@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -30,6 +31,19 @@ export class CategoryService {
 
   async createCategory(orgId: string, createCategoryDto: CreateCategoryDto) {
     const { name } = createCategoryDto;
+    const existingCategories = (
+      await this.categoryRepository.getCategories(orgId)
+    ).filter((c) => !c.isDeleted);
+
+    const isDuplicate = existingCategories.some(
+      (category) =>
+        category.name.trim().toLowerCase() ===
+        createCategoryDto.name.trim().toLowerCase(),
+    );
+
+    if (isDuplicate) {
+      throw new BadRequestException('Category already exists.');
+    }
     const category = await this.categoryRepository.createCatogory(orgId, name);
     return { data: category, message: 'Category created successfully' };
   }
