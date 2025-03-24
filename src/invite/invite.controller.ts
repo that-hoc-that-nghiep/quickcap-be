@@ -61,20 +61,16 @@ export class InviteController {
     return this.inviteService.getInviteById(id);
   }
 
-  @Get('all/:orgId/:receiverId')
-  @ApiOperation({ summary: 'Get invites by orgId and receiverId' })
+  @Get('all/:receiverId')
+  @ApiOperation({ summary: 'Get invites by receiverId' })
   @ApiResponse({
     status: 200,
     description: 'Invites fetched successfully',
     type: [InvitesResDto],
   })
-  @ApiParam({ name: 'orgId', type: 'string' })
   @ApiParam({ name: 'receiverId', type: 'string' })
-  async getInvitesByOrgIdAndReceiverId(
-    @Param('orgId') orgId: string,
-    @Param('receiverId') receiverId: string,
-  ) {
-    return this.inviteService.getInvitesByOrgIdAndReceiverId(orgId, receiverId);
+  async getInvitesAndReceiverId(@Param('receiverId') receiverId: string) {
+    return this.inviteService.getInvitesByReceiverId(receiverId);
   }
 
   @Patch(':id')

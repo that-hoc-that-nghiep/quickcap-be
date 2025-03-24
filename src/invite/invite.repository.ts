@@ -31,8 +31,8 @@ export class InviteRepository {
     return invite;
   }
 
-  async getInvitesByOrgIdAndReceiverId(orgId: string, receiverId: string) {
-    const invites = await this.inviteModel.find({ orgId, receiverId }).exec();
+  async getInvitesByReceiverId(receiverId: string) {
+    const invites = await this.inviteModel.find({ receiverId }).exec();
     return invites;
   }
 
