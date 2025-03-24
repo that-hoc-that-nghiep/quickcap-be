@@ -3,6 +3,7 @@ import { InviteService } from './invite.service';
 import {
   ApiBody,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiSecurity,
   ApiTags,
@@ -67,6 +68,8 @@ export class InviteController {
     description: 'Invites fetched successfully',
     type: [InvitesResDto],
   })
+  @ApiParam({ name: 'orgId', type: 'string' })
+  @ApiParam({ name: 'receiverId', type: 'string' })
   async getInvitesByOrgIdAndReceiverId(
     @Param('orgId') orgId: string,
     @Param('receiverId') receiverId: string,
