@@ -99,11 +99,9 @@ Invite Link: ${inviteLink}`,
     return { data: inviteAccepted, message: 'Invite accepted successfully' };
   }
 
-  async getInvitesByOrgIdAndReceiverId(orgId: string, receiverId: string) {
-    const invites = await this.inviteRepository.getInvitesByOrgIdAndReceiverId(
-      orgId,
-      receiverId,
-    );
+  async getInvitesByReceiverId(receiverId: string) {
+    const invites =
+      await this.inviteRepository.getInvitesByReceiverId(receiverId);
     return { data: invites, message: 'Invites fetched successfully' };
   }
 }
