@@ -38,7 +38,7 @@ export class InviteService {
     const subject = `Invitation to Join ${orgUser.name} on Quickcap App`;
     const content = `You have been invited to join the organization "${orgUser.name}" on Quickcap App by ${user.name}. 
     
-Click the "Accept Invite" button below to join the organization:`;
+Go to the Quickcap App, select the Invites section, check the invitation, and accept it to join the organization.`;
     const inviteLink = 'https://app.quickcap.live';
     const invite = await this.inviteRepository.createInvite(
       user.id,
@@ -65,7 +65,7 @@ Invite Link: ${inviteLink}`,
                       text-decoration: none; 
                       border-radius: 5px; 
                       margin-top: 15px;">
-              Accept Invite
+              Go to Quickcap App
             </a>
             <p style="margin-top: 20px; font-size: 12px; color: #666;">
               If the button doesn't work, copy and paste this link: ${inviteLink}
