@@ -230,6 +230,9 @@ export class VideoService {
         ),
       )) as TranscribeRes;
 
+
+
+      
       if (!transcribeResponse.transcript) {
         const newVideo = await this.saveNewVideoWithouttranscript(
           user,
