@@ -35,7 +35,7 @@ const logger = new Logger('RedisCache');
               return value;
             },
             set: async (key, value, options) => {
-              const ttlInSeconds = 10;
+              const ttlInSeconds = options?.ttl ?? 7;
 
               logger.log(`✅ Cache SET: ${key}, TTL: ${ttlInSeconds} seconds`);
 
@@ -55,7 +55,7 @@ const logger = new Logger('RedisCache');
               return store.reset();
             },
           } as unknown as CacheStore,
-          ttl: 10000,
+          ttl: 7000,
         };
       },
       inject: [ConfigService],
