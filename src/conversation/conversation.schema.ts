@@ -3,7 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { HydratedDocument } from 'mongoose';
 import { RoleChat } from 'src/constants/conversation';
 
-
 export type ConversationDocument = HydratedDocument<Conversation>;
 
 @Schema({ versionKey: false })
@@ -21,7 +20,7 @@ export class Conversation {
   createdAt: Date;
 
   @ApiProperty()
-  @Prop({ required: true }) 
+  @Prop({ required: true })
   videoId: string;
 
   @ApiProperty()

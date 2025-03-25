@@ -1,3 +1,3 @@
 export class ChatRes {
-    response: string
+  response: string;
 }

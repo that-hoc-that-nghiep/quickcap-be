@@ -7,7 +7,7 @@ export class ConversationsResDto {
 
   @ApiProperty()
   message: string;
-  
+
   @ApiProperty({
     type: [Message],
   })

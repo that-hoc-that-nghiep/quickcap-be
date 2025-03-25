@@ -5,7 +5,6 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { Comment } from './comment.schema';
 import { User, UserApp } from 'src/constants/user';
 
-
 @Injectable()
 export class CommentRepository {
   constructor(

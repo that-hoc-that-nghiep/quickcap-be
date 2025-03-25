@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { NSFWType } from 'src/constants/nsfw';
 
-
 export class ResultNSFWRes {
   videoId: string;
 

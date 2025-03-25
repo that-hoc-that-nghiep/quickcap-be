@@ -65,5 +65,4 @@ export class ConversationService {
       message: 'Conversations fetched successfully',
     };
   }
-
 }

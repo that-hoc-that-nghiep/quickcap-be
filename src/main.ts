@@ -50,6 +50,5 @@ async function bootstrap() {
   });
   await app.startAllMicroservices();
   await app.listen(configService.get<number>(EnvVariables.PORT) ?? 8080);
-
 }
 bootstrap();

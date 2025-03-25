@@ -1,4 +1,4 @@
-import { IsArray,IsString } from 'class-validator';
+import { IsArray, IsString } from 'class-validator';
 import { Message } from 'src/constants/conversation';
 
 export class CreateMessageDto {

@@ -46,10 +46,7 @@ export class ReportService {
   }
 
   async acceptReport(reportId: string, videoId: string) {
-    const report = await this.reportRepository.acceptReport(
-      reportId,
-      videoId,
-    );
+    const report = await this.reportRepository.acceptReport(reportId, videoId);
     return { data: report, message: 'Report accepted successfully' };
   }
 }

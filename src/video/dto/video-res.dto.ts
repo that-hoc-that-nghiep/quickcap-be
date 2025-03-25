@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { Video } from "../video.schema";
+import { ApiProperty } from '@nestjs/swagger';
+import { Video } from '../video.schema';
 
 export class VideoResponseDto {
   @ApiProperty()
