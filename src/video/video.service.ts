@@ -14,8 +14,7 @@ import { v4 as uuid } from 'uuid';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { EnvVariables } from 'src/constants';
-import { User, UserApp, UserPermission } from 'src/constants/user';
-import { OrgType } from 'src/constants/org';
+import { User, UserApp } from 'src/constants/user';
 import { RabbitmqService } from 'src/rabbitmq/rabbitmq.service';
 import { VideoDataRes } from './dto/video-data.res';
 import { TranscribeRes } from './dto/transcibe.res';
@@ -29,6 +28,7 @@ import { ResultNSFWRes } from './dto/result-nsfw.res';
 
 import { firstValueFrom } from 'rxjs';
 import { OrderVideo, VideoAdds } from 'src/constants/video';
+import { VideoChunksService } from './video-chunks.service';
 
 interface VideoTemp {
   source: string;
@@ -48,6 +48,7 @@ export class VideoService {
     private categoryRepository: CategoryRepository,
     private configService: ConfigService,
     public readonly rabbitmqService: RabbitmqService,
+    private videoChunksService: VideoChunksService,
   ) {}
   private readonly logger = new Logger(VideoService.name);
   private readonly s3 = new S3Client({
@@ -78,6 +79,87 @@ export class VideoService {
       this.logger.log(`File uploaded s3 successfully ${Key}`);
       return await this.processVideoData(user, orgId, Key);
     }
+  }
+
+  async uploadVideoChunk(
+    user: User,
+    orgId: string,
+    fileId: string,
+    chunkIndex: number,
+    totalChunks: number,
+    originalFilename: string,
+    chunk: Express.Multer.File,
+  ) {
+    // Save the chunk
+    await this.videoChunksService.saveChunk(
+      fileId,
+      chunkIndex,
+      totalChunks,
+      chunk.buffer,
+    );
+
+    // Check if all chunks have been uploaded
+    const status = await this.videoChunksService.getUploadStatus(
+      fileId,
+      totalChunks,
+    );
+
+    if (status.complete) {
+      this.logger.log(`All chunks received for ${fileId}, combining...`);
+
+      try {
+        // Combine all chunks
+        const combinedBuffer = await this.videoChunksService.combineChunks(
+          fileId,
+          totalChunks,
+        );
+
+        // Upload the combined file to S3
+        const sanitizedFileName = removeVietnameseAccents(originalFilename);
+        const Key: string = `${uuid()}-${sanitizedFileName}`;
+        const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
+        const ContentType = chunk.mimetype;
+
+        const command = new PutObjectCommand({
+          Bucket,
+          Key,
+          Body: combinedBuffer,
+          ContentType,
+        });
+
+        const fileStatus = await this.s3.send(command);
+        if (fileStatus.$metadata.httpStatusCode === 200) {
+          this.logger.log(`Combined file uploaded to S3 successfully: ${Key}`);
+          // Process the video data as usual
+          const result = await this.processVideoData(user, orgId, Key);
+          return {
+            ...result,
+            uploadStatus: {
+              complete: true,
+              uploaded: totalChunks,
+              total: totalChunks,
+            },
+          };
+        }
+      } catch (error) {
+        this.logger.error(
+          `Error processing combined chunks: ${error.message}`,
+          error.stack,
+        );
+        throw new InternalServerErrorException(
+          'Failed to process combined video chunks',
+        );
+      }
+    }
+
+    return {
+      message: 'Chunk uploaded successfully',
+      uploadStatus: status,
+    };
+  }
+
+  async getChunkUploadStatus(fileId: string, totalChunks: number) {
+    return await this.videoChunksService.getUploadStatus(fileId, totalChunks);
   }
 
   async getAllVideos(
@@ -204,7 +286,7 @@ export class VideoService {
       picture: user.picture,
       subscription: user.subscription,
     };
-    let video: VideoTemp = {
+    const video: VideoTemp = {
       source: videoUrl,
       user: userVideo,
       orgId,
@@ -333,7 +415,7 @@ export class VideoService {
       this.logger.log('Create video', newVideo);
       return newVideo;
     } catch (e) {
-      this.logger.error('Save new Video error');
+      this.logger.error(e.message);
       throw new InternalServerErrorException('Error saveNewVideo');
     }
   }
@@ -345,7 +427,7 @@ export class VideoService {
     isNSFW?: boolean,
   ) {
     try {
-      let categoryIds: string[] = [];
+      const categoryIds: string[] = [];
       const categories = await this.categoryRepository.getCategories(orgId);
       const categoryNames = categories.map((category) => category.name);
       if (categoryNames.includes('Default')) {
@@ -376,7 +458,7 @@ export class VideoService {
       });
       return newVideo;
     } catch (e) {
-      this.logger.error('Save new Video error');
+      this.logger.error(e.message);
       throw new InternalServerErrorException('Error saveNewVideo');
     }
   }

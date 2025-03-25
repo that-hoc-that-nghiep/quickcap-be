@@ -15,12 +15,12 @@ export function extractS3Path(s3Url: string): string {
 export function removeVietnameseAccents(str: string): string {
   str = str.replace(/\s+/g, '_');
 
-  var from =
+  const from =
       'àáãảạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệđùúủũụưừứửữựòóỏõọôồốổỗộơờớởỡợìíỉĩịäëïîöüûñçýỳỹỵỷ',
     to =
       'aaaaaaaaaaaaaaaaaeeeeeeeeeeeduuuuuuuuuuuoooooooooooooooooiiiiiaeiiouuncyyyyy';
 
-  for (var i = 0, l = from.length; i < l; i++) {
+  for (let i = 0, l = from.length; i < l; i++) {
     str = str.replace(RegExp(from[i], 'gi'), to[i]);
   }
 
