@@ -39,12 +39,14 @@ export class VideoRepository {
     orgId: string,
     source: string,
     categoryId: string[],
+    isNSFW?: boolean,
   ): Promise<Video> {
     const video = await this.videoModel.create({
       source,
       user: user,
       orgId,
       categoryId,
+      isNSFW,
     });
     return video;
   }

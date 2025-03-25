@@ -230,12 +230,32 @@ export class VideoService {
         ),
       )) as TranscribeRes;
 
-      if (!transcribeResponse.transcript) {
+      if (transcribeResponse.isNSFW) {
+        this.logger.log('Video is NSFW by transcribe');
+        const newVideo = await this.saveNewVideoWithouttranscript(
+          user,
+          orgId,
+          videoUrl,
+          transcribeResponse.isNSFW,
+        );
+        this.logger.log('Saved video', newVideo);
+        return {
+          data: newVideo,
+          message: 'Video processed and saved successfully',
+        };
+      }
+
+      if (
+        !transcribeResponse.transcript ||
+        transcribeResponse.transcript.trim() === ''
+      ) {
+        this.logger.log('Video no transcript found');
         const newVideo = await this.saveNewVideoWithouttranscript(
           user,
           orgId,
           videoUrl,
         );
+        this.logger.log('Saved video', newVideo);
         return {
           data: newVideo,
           message: 'Video processed and saved successfully',
@@ -322,6 +342,7 @@ export class VideoService {
     user: UserApp,
     orgId: string,
     videoUrl: string,
+    isNSFW?: boolean,
   ) {
     try {
       let categoryIds: string[] = [];
@@ -346,6 +367,7 @@ export class VideoService {
         orgId,
         videoUrl,
         categoryIds,
+        isNSFW,
       );
       this.logger.log('Create video', newVideo);
       this.rabbitmqService.emitEvent('check-nsfw', {
