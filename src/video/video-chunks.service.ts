@@ -7,6 +7,17 @@ import { ConfigService } from '@nestjs/config';
 export class VideoChunksService {
   private readonly logger = new Logger(VideoChunksService.name);
   private readonly tempDir: string;
+  // Add a map to track completed uploads
+  private readonly completedUploads = new Map<string, boolean>();
+  private readonly uploadStatus = new Map<
+    string,
+    {
+      uploaded: number;
+      total: number;
+      complete: boolean;
+      missingChunks?: number[];
+    }
+  >();
 
   constructor(private configService: ConfigService) {
     // Configure a temp directory for chunks
@@ -36,8 +47,8 @@ export class VideoChunksService {
     try {
       await fs.promises.access(chunkDir);
     } catch (error) {
-      this.logger.error(error.message);
       await fs.promises.mkdir(chunkDir, { recursive: true });
+      this.logger.error(error.message);
       this.logger.log(`Created directory for file ${fileId}`);
     }
 
@@ -48,6 +59,9 @@ export class VideoChunksService {
       this.logger.log(
         `Saved chunk ${chunkIndex + 1}/${totalChunks} for ${fileId}`,
       );
+
+      // After saving a chunk, update the status immediately
+      await this.updateInternalStatus(fileId, totalChunks);
     } catch (error) {
       this.logger.error(
         `Error saving chunk ${chunkIndex} for ${fileId}`,
@@ -56,6 +70,51 @@ export class VideoChunksService {
       throw new Error(
         `Failed to save chunk ${chunkIndex} for ${fileId}: ${error.message}`,
       );
+    }
+  }
+
+  // Add a method to update the internal status
+  private async updateInternalStatus(
+    fileId: string,
+    totalChunks: number,
+  ): Promise<void> {
+    try {
+      const chunkDir = path.join(this.tempDir, fileId);
+      const files = await fs.promises.readdir(chunkDir);
+
+      // Determine which chunks are present
+      const uploadedChunks = new Set(
+        files
+          .map((filename) => parseInt(filename, 10))
+          .filter(
+            (index) => !isNaN(index) && index >= 0 && index < totalChunks,
+          ),
+      );
+
+      // Determine which chunks are missing
+      const missingChunks: number[] = [];
+      for (let i = 0; i < totalChunks; i++) {
+        if (!uploadedChunks.has(i)) {
+          missingChunks.push(i);
+        }
+      }
+
+      const complete = uploadedChunks.size === totalChunks;
+
+      // Save status to cache
+      this.uploadStatus.set(fileId, {
+        uploaded: uploadedChunks.size,
+        total: totalChunks,
+        complete,
+        missingChunks: missingChunks.length > 0 ? missingChunks : undefined,
+      });
+
+      // Mark as completed if all chunks are uploaded
+      if (complete) {
+        this.completedUploads.set(fileId, true);
+      }
+    } catch (error) {
+      this.logger.error(`Error updating internal status for ${fileId}:`, error);
     }
   }
 
@@ -77,6 +136,15 @@ export class VideoChunksService {
         }
       }
 
+      // Mark this upload as complete in our tracking map BEFORE combining
+      // so status checks during processing still report correctly
+      this.completedUploads.set(fileId, true);
+      this.uploadStatus.set(fileId, {
+        uploaded: totalChunks,
+        total: totalChunks,
+        complete: true,
+      });
+
       // Then read and combine them
       for (let i = 0; i < totalChunks; i++) {
         const chunkPath = path.join(chunkDir, `${i}`);
@@ -92,8 +160,9 @@ export class VideoChunksService {
         `Successfully combined ${totalChunks} chunks for ${fileId}, total size: ${combinedBuffer.length} bytes`,
       );
 
-      // Clean up chunks in the background
-      this.cleanupChunks(fileId).catch((err) => {
+      // Clean up chunks in the background AFTER we create the buffer,
+      // but maintain the status information
+      this.cleanupChunks(fileId, false).catch((err) => {
         this.logger.error(`Failed to cleanup chunks for ${fileId}`, err);
       });
 
@@ -104,21 +173,52 @@ export class VideoChunksService {
     }
   }
 
-  private async cleanupChunks(fileId: string): Promise<void> {
+  private async cleanupChunks(
+    fileId: string,
+    removeStatus = true,
+  ): Promise<void> {
     const chunkDir = path.join(this.tempDir, fileId);
 
     try {
       this.logger.log(`Cleaning up chunks for ${fileId}`);
-      const files = await fs.promises.readdir(chunkDir);
 
-      // Delete each chunk file
-      for (const file of files) {
-        await fs.promises.unlink(path.join(chunkDir, file));
+      // Make sure we keep tracking the upload as complete even if files are removed
+      if (!removeStatus) {
+        const currentStatus = this.uploadStatus.get(fileId);
+        if (currentStatus) {
+          this.uploadStatus.set(fileId, {
+            ...currentStatus,
+            complete: true,
+          });
+        }
       }
 
-      // Remove the directory
-      await fs.promises.rmdir(chunkDir);
-      this.logger.log(`Successfully cleaned up all chunks for ${fileId}`);
+      try {
+        const files = await fs.promises.readdir(chunkDir);
+        // Delete each chunk file
+        for (const file of files) {
+          await fs.promises.unlink(path.join(chunkDir, file));
+        }
+        // Remove the directory
+        await fs.promises.rmdir(chunkDir);
+        this.logger.log(`Successfully cleaned up all chunks for ${fileId}`);
+      } catch (error) {
+        this.logger.error(`Error cleaning chunk files: ${error.message}`);
+        // Non-fatal, continue
+      }
+
+      // Only remove tracking data if requested
+      if (removeStatus) {
+        // Wait 5 minutes before removing status info to allow for any final status checks
+        setTimeout(
+          () => {
+            this.completedUploads.delete(fileId);
+            this.uploadStatus.delete(fileId);
+            this.logger.log(`Removed tracking data for ${fileId}`);
+          },
+          5 * 60 * 1000,
+        );
+      }
     } catch (error) {
       this.logger.error(`Error cleaning up chunks for ${fileId}`, error);
       // Don't rethrow this error since cleanup is non-critical
@@ -134,6 +234,31 @@ export class VideoChunksService {
     complete: boolean;
     missingChunks?: number[];
   }> {
+    this.logger.log(
+      `Checking status for fileId=${fileId}, totalChunks=${totalChunks}`,
+    );
+
+    // First check if we've marked this upload as complete
+    if (this.completedUploads.get(fileId) === true) {
+      this.logger.log(`FileId=${fileId} is marked as complete in our tracking`);
+      return {
+        uploaded: totalChunks,
+        total: totalChunks,
+        complete: true,
+      };
+    }
+
+    // Next check our cached status
+    const cachedStatus = this.uploadStatus.get(fileId);
+    if (cachedStatus) {
+      this.logger.log(
+        `Retrieved cached status for fileId=${fileId}:`,
+        cachedStatus,
+      );
+      return cachedStatus;
+    }
+
+    // If no cached data, check the filesystem
     const chunkDir = path.join(this.tempDir, fileId);
 
     try {
@@ -159,22 +284,38 @@ export class VideoChunksService {
 
       const complete = uploadedChunks.size === totalChunks;
 
-      return {
+      // Cache the result for future queries
+      const status = {
         uploaded: uploadedChunks.size,
         total: totalChunks,
         complete,
         missingChunks: missingChunks.length > 0 ? missingChunks : undefined,
       };
+
+      this.uploadStatus.set(fileId, status);
+      if (complete) {
+        this.completedUploads.set(fileId, true);
+      }
+
+      this.logger.log(`Filesystem status for fileId=${fileId}:`, status);
+      return status;
     } catch (error) {
+      // If the directory doesn't exist and we have no cached data,
+      // then indeed no chunks have been uploaded
       this.logger.error(error.message);
-      // Directory doesn't exist, so no chunks uploaded yet
-      this.logger.log(`No chunks found for ${fileId}`);
-      return {
+      this.logger.log(
+        `No chunks directory found for ${fileId}, assuming no uploads`,
+      );
+
+      const status = {
         uploaded: 0,
         total: totalChunks,
         complete: false,
         missingChunks: Array.from({ length: totalChunks }, (_, i) => i),
       };
+
+      this.uploadStatus.set(fileId, status);
+      return status;
     }
   }
 
@@ -188,11 +329,14 @@ export class VideoChunksService {
       for (const entry of entries) {
         if (entry.isDirectory()) {
           const dirPath = path.join(this.tempDir, entry.name);
-          const stats = await fs.promises.stat(dirPath);
-
-          if (stats.mtimeMs < cutoffTime) {
-            this.logger.log(`Cleaning up incomplete upload: ${entry.name}`);
-            await this.cleanupChunks(entry.name);
+          try {
+            const stats = await fs.promises.stat(dirPath);
+            if (stats.mtimeMs < cutoffTime) {
+              this.logger.log(`Cleaning up incomplete upload: ${entry.name}`);
+              await this.cleanupChunks(entry.name, true);
+            }
+          } catch (error) {
+            this.logger.error(`Error checking directory ${entry.name}:`, error);
           }
         }
       }

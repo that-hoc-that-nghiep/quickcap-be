@@ -93,77 +93,102 @@ export class VideoService {
     originalFilename: string,
     chunk: Express.Multer.File,
   ) {
-    // Save the chunk
-    await this.videoChunksService.saveChunk(
-      fileId,
-      chunkIndex,
-      totalChunks,
-      chunk.buffer,
-    );
+    try {
+      // Save the chunk
+      await this.videoChunksService.saveChunk(
+        fileId,
+        chunkIndex,
+        totalChunks,
+        chunk.buffer,
+      );
 
-    // Check if all chunks have been uploaded
-    const status = await this.videoChunksService.getUploadStatus(
-      fileId,
-      totalChunks,
-    );
+      // Check if all chunks have been uploaded
+      const status = await this.videoChunksService.getUploadStatus(
+        fileId,
+        totalChunks,
+      );
 
-    if (status.complete) {
-      this.logger.log(`All chunks received for ${fileId}, combining...`);
+      this.logger.log(
+        `Chunk upload status for ${fileId}: ${JSON.stringify(status)}`,
+      );
 
-      try {
-        // Combine all chunks
-        const combinedBuffer = await this.videoChunksService.combineChunks(
-          fileId,
-          totalChunks,
+      if (status.complete) {
+        this.logger.log(
+          `All ${totalChunks} chunks received for ${fileId}, combining...`,
         );
 
-        // Upload the combined file to S3
-        const sanitizedFileName = removeVietnameseAccents(originalFilename);
-        const Key: string = `${uuid()}-${sanitizedFileName}`;
-        const Bucket = this.configService.get<string>(EnvVariables.BUCKET_NAME);
-        const ContentType = chunk.mimetype;
+        try {
+          // Combine all chunks
+          const combinedBuffer = await this.videoChunksService.combineChunks(
+            fileId,
+            totalChunks,
+          );
 
-        const command = new PutObjectCommand({
-          Bucket,
-          Key,
-          Body: combinedBuffer,
-          ContentType,
-        });
+          // Upload the combined file to S3
+          const sanitizedFileName = removeVietnameseAccents(originalFilename);
+          const Key: string = `${uuid()}-${sanitizedFileName}`;
+          const Bucket = this.configService.get<string>(
+            EnvVariables.BUCKET_NAME,
+          );
+          const ContentType = chunk.mimetype;
 
-        const fileStatus = await this.s3.send(command);
-        if (fileStatus.$metadata.httpStatusCode === 200) {
-          this.logger.log(`Combined file uploaded to S3 successfully: ${Key}`);
-          // Process the video data as usual
-          const result = await this.processVideoData(user, orgId, Key);
+          this.logger.log(`Uploading combined file to S3: ${Key}`);
+          const command = new PutObjectCommand({
+            Bucket,
+            Key,
+            Body: combinedBuffer,
+            ContentType,
+          });
 
-          // Store the processed video with its fileId for later retrieval
-          this.processedVideos.set(fileId, result);
+          const fileStatus = await this.s3.send(command);
+          if (fileStatus.$metadata.httpStatusCode === 200) {
+            this.logger.log(
+              `Combined file uploaded to S3 successfully: ${Key}`,
+            );
 
-          // Make sure to return the result with the full video data
-          return {
-            ...result,
-            uploadStatus: {
-              complete: true,
-              uploaded: totalChunks,
-              total: totalChunks,
-            },
-          };
+            // Process the video data as usual
+            this.logger.log(`Processing video data for ${Key}`);
+            const result = await this.processVideoData(user, orgId, Key);
+
+            // Store the processed video with its fileId for later retrieval
+            this.processedVideos.set(fileId, result);
+
+            // Make sure to return the result with the full video data
+            this.logger.log(`Returning processed video data for ${fileId}`);
+
+            return {
+              ...result,
+              uploadStatus: {
+                complete: true,
+                uploaded: totalChunks,
+                total: totalChunks,
+              },
+            };
+          }
+        } catch (error) {
+          this.logger.error(
+            `Error processing combined chunks: ${error.message}`,
+            error.stack,
+          );
+          throw new InternalServerErrorException(
+            'Failed to process combined video chunks',
+          );
         }
-      } catch (error) {
-        this.logger.error(
-          `Error processing combined chunks: ${error.message}`,
-          error.stack,
-        );
-        throw new InternalServerErrorException(
-          'Failed to process combined video chunks',
-        );
       }
-    }
 
-    return {
-      message: 'Chunk uploaded successfully',
-      uploadStatus: status,
-    };
+      return {
+        message: 'Chunk uploaded successfully',
+        uploadStatus: status,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error in uploadVideoChunk: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        `Failed to upload chunk: ${error.message}`,
+      );
+    }
   }
 
   async getLatestVideoByFileId(fileId: string, orgId: string) {
