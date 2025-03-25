@@ -4,7 +4,6 @@ import mongoose, { HydratedDocument } from 'mongoose';
 import { Category } from 'src/category/category.schema';
 import { NSFWType } from 'src/constants/nsfw';
 import { UserApp } from 'src/constants/user';
-import { VideoType } from 'src/constants/video';
 
 export type TaskDocument = HydratedDocument<Video>;
 

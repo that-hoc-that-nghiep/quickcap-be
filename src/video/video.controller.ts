@@ -19,6 +19,7 @@ import {
   ApiConsumes,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiSecurity,
   ApiTags,
@@ -28,10 +29,9 @@ import { ApiDocsPagination } from 'src/decorators/swagger-form-data.decorator';
 import { GetUser } from 'src/decorators/get-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateVideoDto } from './dto/update-video.dto';
-import { OrderVideo, VideoType } from 'src/constants/video';
+import { OrderVideo } from 'src/constants/video';
 import { OrgType } from 'src/constants/org';
 import { User } from 'src/constants/user';
-import { Video } from './video.schema';
 import { VideoResponseDto } from './dto/video-res.dto';
 import { VideosResponseDto } from './dto/videos-res.dto';
 import { EventPattern } from '@nestjs/microservices';
@@ -49,6 +49,8 @@ export class VideoController {
     private CloudinaryService: CloudinaryService,
   ) {}
   private readonly logger = new Logger(VideoController.name);
+
+  // Keep existing video upload endpoint for backward compatibility
   @Post()
   @ApiOperation({
     summary: 'Upload video',
@@ -100,6 +102,130 @@ export class VideoController {
       return res;
     } catch (error) {
       this.logger.error('Error uploading video', error);
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  @Post('chunks')
+  @ApiOperation({
+    summary: 'Upload video chunk',
+    description: 'Upload video in chunks for parallel processing',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        fileId: {
+          type: 'string',
+          description: 'Unique identifier for the file',
+        },
+        chunkIndex: {
+          type: 'number',
+          description: 'Current chunk index (0-based)',
+        },
+        totalChunks: {
+          type: 'number',
+          description: 'Total number of chunks',
+        },
+        originalFilename: {
+          type: 'string',
+          description: 'Original filename',
+        },
+        chunk: {
+          type: 'string',
+          format: 'binary',
+          description: 'Chunk data',
+        },
+      },
+      required: [
+        'fileId',
+        'chunkIndex',
+        'totalChunks',
+        'originalFilename',
+        'chunk',
+      ],
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('chunk', {
+      fileFilter: (req, file, callback) => {
+        // For chunks, we accept any mimetype since they might not be recognized correctly
+        callback(null, true);
+      },
+      limits: {
+        fileSize: 20 * 1024 * 1024, // 20MB limit per chunk
+      },
+    }),
+  )
+  @ApiResponse({
+    status: 201,
+    description: 'Chunk uploaded successfully',
+  })
+  async uploadVideoChunk(
+    @GetUser() user: User,
+    @UploadedFile() chunk: Express.Multer.File,
+    @Query('fileId') fileId: string,
+    @Query('chunkIndex', ParseIntPipe) chunkIndex: number,
+    @Query('totalChunks', ParseIntPipe) totalChunks: number,
+    @Query('originalFilename') originalFilename: string,
+  ) {
+    try {
+      const orgId = user.organizations.find(
+        (org) => org.type === OrgType.PERSONAL,
+      ).id;
+
+      return await this.videoService.uploadVideoChunk(
+        user,
+        orgId,
+        fileId,
+        chunkIndex,
+        totalChunks,
+        originalFilename,
+        chunk,
+      );
+    } catch (error) {
+      this.logger.error('Error uploading video chunk', error);
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  @Get('chunks/status')
+  @ApiOperation({
+    summary: 'Check chunk upload status',
+    description: 'Check the status of a chunked upload',
+  })
+  @ApiQuery({
+    name: 'fileId',
+    type: 'string',
+    description: 'File identifier',
+    required: true,
+  })
+  @ApiQuery({
+    name: 'totalChunks',
+    type: 'number',
+    description: 'Total number of chunks',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Upload status retrieved successfully',
+  })
+  async getChunkUploadStatus(
+    @Query('fileId') fileId: string,
+    @Query('totalChunks', ParseIntPipe) totalChunks: number,
+  ) {
+    try {
+      const status = await this.videoService.getChunkUploadStatus(
+        fileId,
+        totalChunks,
+      );
+      return {
+        message: 'Upload status retrieved successfully',
+        status,
+      };
+    } catch (error) {
+      this.logger.error('Error getting chunk upload status', error);
       throw new InternalServerErrorException(error);
     }
   }
