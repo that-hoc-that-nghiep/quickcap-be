@@ -59,6 +59,9 @@ export class VideoService {
     region: this.configService.get<string>(EnvVariables.BUCKET_REGION),
   });
 
+  // Map to track fileIds to processed videos
+  private readonly processedVideos = new Map<string, any>();
+
   async uploadVideo(user: User, orgId: string, file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
@@ -132,6 +135,11 @@ export class VideoService {
           this.logger.log(`Combined file uploaded to S3 successfully: ${Key}`);
           // Process the video data as usual
           const result = await this.processVideoData(user, orgId, Key);
+
+          // Store the processed video with its fileId for later retrieval
+          this.processedVideos.set(fileId, result);
+
+          // Make sure to return the result with the full video data
           return {
             ...result,
             uploadStatus: {
@@ -156,6 +164,32 @@ export class VideoService {
       message: 'Chunk uploaded successfully',
       uploadStatus: status,
     };
+  }
+
+  async getLatestVideoByFileId(fileId: string, orgId: string) {
+    // Try to get the processed video from the map
+    const cachedVideo = this.processedVideos.get(fileId);
+
+    if (cachedVideo) {
+      this.logger.log(`Found cached video for fileId ${fileId}`);
+      return cachedVideo;
+    }
+
+    // If not found, get the most recent video for this org
+    this.logger.log(
+      `No cached video found for fileId ${fileId}, getting latest for orgId ${orgId}`,
+    );
+
+    const videos = await this.videoRepository.getAllVideos(orgId, 1, 1);
+
+    if (videos && videos.videos.length > 0) {
+      return {
+        data: videos.videos[0],
+        message: 'Latest video retrieved successfully',
+      };
+    }
+
+    throw new NotFoundException(`No recent video found for fileId ${fileId}`);
   }
 
   async getChunkUploadStatus(fileId: string, totalChunks: number) {

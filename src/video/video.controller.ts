@@ -511,4 +511,37 @@ export class VideoController {
       throw new InternalServerErrorException(error);
     }
   }
+
+  @Get('latest')
+  @ApiOperation({
+    summary: 'Get latest processed video by fileId',
+    description: 'Get the latest video that was processed from chunked upload',
+  })
+  @ApiQuery({
+    name: 'fileId',
+    type: 'string',
+    description: 'Upload file identifier',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Video retrieved successfully',
+    type: VideoResponseDto,
+  })
+  async getLatestVideo(@GetUser() user: User, @Query('fileId') fileId: string) {
+    try {
+      const orgId = user.organizations.find(
+        (org) => org.type === OrgType.PERSONAL,
+      ).id;
+
+      const video = await this.videoService.getLatestVideoByFileId(
+        fileId,
+        orgId,
+      );
+      return video;
+    } catch (error) {
+      this.logger.error('Error getting latest video', error);
+      throw new InternalServerErrorException(error);
+    }
+  }
 }
