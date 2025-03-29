@@ -295,9 +295,13 @@ export class VideoRepository {
 
   async getAnalyticsVideosByOrgId(orgId: string) {
     const videos = await this.videoModel.find({ orgId }).exec();
-    const totalVideo = videos.length;
-    const totalLike = videos.reduce((total, video) => total + video.like, 0);
-    const totalView = videos.reduce((total, video) => total + video.views, 0);
+    const totalVideo = videos.filter((video) => !video.isDeleted).length;
+    const totalLike = videos
+      .filter((video) => !video.isDeleted)
+      .reduce((total, video) => total + video.like, 0);
+    const totalView = videos
+      .filter((video) => !video.isDeleted)
+      .reduce((total, video) => total + video.views, 0);
     return {
       totalVideo,
       totalLike,
